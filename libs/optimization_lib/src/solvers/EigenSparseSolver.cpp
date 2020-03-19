@@ -47,14 +47,15 @@ Eigen::VectorXd EigenSparseSolver<vectorTypeI, vectorTypeS>::solve(Eigen::Vector
 template <typename vectorTypeI, typename vectorTypeS>
 void EigenSparseSolver<vectorTypeI, vectorTypeS>::perpareMatrix(const vectorTypeI &II, const vectorTypeI &JJ, const vectorTypeS &SS)
 {
+	double epsilon = 1e-2;
 	Eigen::SparseMatrix<double> UpperTriangular_A = Utils::BuildMatrix(II,JJ,SS);
 	full_A = UpperTriangular_A.selfadjointView<Eigen::Upper>();
 
 	double min_eig_value = full_A.toDense().eigenvalues().real().minCoeff();
 	cout << "before: min_eig_value = " << min_eig_value << endl;
-	if (min_eig_value < 0) {
+	if (min_eig_value < epsilon) {
 		for (int i = 0; i < full_A.rows(); i++) {
-			full_A.coeffRef(i, i) = full_A.coeff(i, i) + (-min_eig_value + 1e-4);
+			full_A.coeffRef(i, i) = full_A.coeff(i, i) + (-min_eig_value + epsilon);
 		}
 	}
 	cout << "after: full min_eig_value = " << full_A.toDense().eigenvalues().real().minCoeff() << endl;
