@@ -12,16 +12,16 @@ MembraneConstraints::~MembraneConstraints() {
 
 void MembraneConstraints::init()
 {
-	if (V.size() == 0 || F.size() == 0)
+	if (restShapeV.size() == 0 || F.size() == 0)
 		throw name + " must define members V,F before init()!";
 	
-	assert(V.col(2).isZero() && "Warning: Rest shape is assumed to be in the plane (z coordinate must be zero in the beginning)");
+	assert(restShapeV.col(2).isZero() && "Warning: Rest shape is assumed to be in the plane (z coordinate must be zero in the beginning)");
 	shearModulus = 0.3;
 	bulkModulus = 1.5;
 	setRestShapeFromCurrentConfiguration();
 	//distribute the mass of this element to the nodes that define it...
 	//for (int i = 0; i < 3; i++)
-	//	n[i]->addMassContribution((restShapeArea * massDensity) / 3.0);
+	//	n[i]->addMassContribution((restShapeArea[fi] * massDensity) / 3.0);
 	init_hessian();
 }
 
@@ -29,15 +29,15 @@ void MembraneConstraints::setRestShapeFromCurrentConfiguration() {
 	//edge vectors
 	dXInv.clear();
 	for (int fi = 0; fi < F.rows(); fi++) {
-		Eigen::VectorXd V1 = V.row(F(fi, 1)) - V.row(F(fi, 0));
-		Eigen::VectorXd V2 = V.row(F(fi, 2)) - V.row(F(fi, 0));
+		Eigen::VectorXd V1 = restShapeV.row(F(fi, 1)) - restShapeV.row(F(fi, 0));
+		Eigen::VectorXd V2 = restShapeV.row(F(fi, 2)) - restShapeV.row(F(fi, 0));
 		//matrix that holds three edge vectors
 		Eigen::Matrix2d dX; dX << V1[0], V2[0], V1[1], V2[1];
 		dXInv.push_back(dX.inverse()); //TODO .inverse() is baaad
 	}
 	
 	//compute the area for each triangle
-	igl::doublearea(V, F, restShapeArea);
+	igl::doublearea(restShapeV, F, restShapeArea);
 	restShapeArea /= 2;
 }
 
@@ -69,7 +69,7 @@ Eigen::VectorXd MembraneConstraints::getMass() {
 
 void MembraneConstraints::gradient(Eigen::VectorXd& g, const bool update)
 {
-	g.conservativeResize(V.rows() * 3);
+	g.conservativeResize(restShapeV.rows() * 3);
 	g.setZero();
 
 	//compute the gradient of the energy using the chain rule: dE/dx = dE/dF * dF/dx. dE/dF is the first Piola-Kirchoff stress sensor, for which nice expressions exist.
@@ -88,19 +88,19 @@ void MembraneConstraints::gradient(Eigen::VectorXd& g, const bool update)
 				dEdF(0, 0) * dXInv[fi](0, 0) + dEdF(0, 1) * dXInv[fi](0, 1),
 				dEdF(1, 0) * dXInv[fi](0, 0) + dEdF(1, 1) * dXInv[fi](0, 1),
 				dEdF(2, 0) * dXInv[fi](0, 0) + dEdF(2, 1) * dXInv[fi](0, 1)
-			) * restShapeArea;
+			) * restShapeArea[fi];
 
 		dEdx[2] =
 			Eigen::Vector3d(
 				dEdF(0, 0) * dXInv[fi](1, 0) + dEdF(0, 1) * dXInv[fi](1, 1),
 				dEdF(1, 0) * dXInv[fi](1, 0) + dEdF(1, 1) * dXInv[fi](1, 1),
 				dEdF(2, 0) * dXInv[fi](1, 0) + dEdF(2, 1) * dXInv[fi](1, 1)
-			) * restShapeArea;
+			) * restShapeArea[fi];
 		dEdx[0] = -dEdx[1] - dEdx[2];
 
 		for (int vi = 0; vi < 3; vi++)
 			for (int xyz = 0; xyz < 3; xyz++)
-				g[F(fi, vi) + (xyz*V.rows())] += dEdx[vi](xyz);
+				g[F(fi, vi) + (xyz*restShapeV.rows())] += dEdx[vi](xyz);
 	}
 
 	if (update)
@@ -109,7 +109,7 @@ void MembraneConstraints::gradient(Eigen::VectorXd& g, const bool update)
 
 void MembraneConstraints::updateX(const Eigen::VectorXd& X)
 {
-	assert(X.rows() == (3 * V.rows()));
+	assert(X.rows() == (3 * restShapeV.rows()));
 	CurrV = Eigen::Map<const Eigen::MatrixXd>(X.data(), X.rows() / 3, 3);
 	FF.clear();
 	for (int fi = 0; fi < F.rows(); fi++) {
@@ -161,7 +161,7 @@ void MembraneConstraints::addEnergyHessianTo(const Eigen::VectorXd& x) {
 	Most of this is simply copied from CSTElement2D.
 	 The only thing that's different is that some matrices are 3x2 or 3x3 as opposed to 2x2.
 	H = dfdx = ddEdxdx.
-	H = restShapeArea * dPdx(F; dFdx) * transpose(dXInv)
+	H = restShapeArea[fi] * dPdx(F; dFdx) * transpose(dXInv)
 	There are different formula of dPdx in different models. See below.
 	dFdx = dDsdx * dXInv
 	dDs = [	dx1 - dx0, dx2 - dx0
@@ -197,7 +197,7 @@ void MembraneConstraints::addEnergyHessianTo(const Eigen::VectorXd& x) {
 	//		Matrix2x2 dEdXij = 0.5 * (dFdXij.transpose() * F + FT * dFdXij);
 	//		Eigen::Matrix<double, 3, 2> dPdXij = dFdXij * (2.0 * shearModulus * E + bulkModulus * E.trace() * I);
 	//		dPdXij += F * (2.0 * shearModulus * dEdXij + bulkModulus * dEdXij.trace() * I);
-	//		Eigen::Matrix<double, 3, 2> dHdXij = restShapeArea * dPdXij * dXInv.transpose();
+	//		Eigen::Matrix<double, 3, 2> dHdXij = restShapeArea[fi] * dPdXij * dXInv.transpose();
 	//		for (int ii = 0; ii < 2; ++ii)
 	//			for (int jj = 0; jj < 3; ++jj)
 	//				ddEdxdx[ii + 1][i](jj, j) = dHdXij(jj, ii);
