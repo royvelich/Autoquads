@@ -37,25 +37,23 @@ private:
 	//keep track of the rest shape area
 	Eigen::VectorXd restShapeArea;
 
-	double defEnergyForDrawing = 0;
-	double densityForDrawing = 1;
-
 	//the collection of nodes that define the triangle element
 	//Node* n[3];
 	//parameters needed for gradient and hessian of the energy
-	//V3D dEdx[3];
-	Matrix3x3 ddEdxdx[3][3];
+	//Eigen::Vector3d dEdx[3];
+	Eigen::MatrixXd CurrV;
+	std::vector < Matrix3x3> ddEdxdx[3][3];
 	//tmp matrices used to speed up computation of the deformation gradient, green strain, etc
-	Matrix2x2 dXInv, strain;
-	Eigen::Matrix<double, 3, 2> dx, F, dEdF;
+	std::vector<Matrix2x2> dXInv, strain;
+	std::vector<Eigen::Matrix<double, 3, 2>> FF, dEdF;
 
 	
 	//as a deformation measure, we need to compute the deformation gradient F. F maps deformed vectors dx to undeformed coords dX: dx = F*dX.
 	//for linear basis functions, an easy way to compute it is by looking at the matrix that maps deformed traingle/tet edges to their underformed counterparts (F = dx * inv(dX)).
-	void computeDeformationGradient(const dVector& x, Eigen::Matrix<double, 3, 2>& dxdX);
+	//void computeDeformationGradient(Eigen::Matrix<double, 3, 2>& dxdX, int fi);
 
 	//sets important properties of the rest shape using the set of points passed in as parameters
-	virtual void setRestShapeFromCurrentConfiguration();
+	void setRestShapeFromCurrentConfiguration();
 
 	void setYoungsModulusAndPoissonsRatio(double E, double nu) {
 		shearModulus = E / (2 * (1 + nu));
@@ -67,9 +65,16 @@ private:
 		bulkModulus = K;
 	}
 	Eigen::VectorXd getMass();
-	double getEnergy(const dVector& x);
-	void addEnergyGradientTo(const dVector& x, dVector& grad);
 	void addEnergyHessianTo(const dVector& x);
+
+	virtual void init_hessian();
 public:
 	CSTriangle3D();
+	~CSTriangle3D();
+	virtual void init();
+	
+	virtual void updateX(const Eigen::VectorXd& X);
+	virtual double value(const bool update);
+	virtual void gradient(Eigen::VectorXd& g, const bool update);
+	virtual void hessian();
 };
