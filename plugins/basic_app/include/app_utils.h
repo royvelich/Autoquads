@@ -13,6 +13,7 @@
 #include "../../libs/optimization_lib/include/solvers/worhpSolver.h"
 
 #include "../../libs/optimization_lib/include/objective_functions/BendingEdge.h"
+#include "../../libs/optimization_lib/include/objective_functions/MembraneConstraints.h"
 #include "../../libs/optimization_lib/include/objective_functions/PenaltyPositionalConstraints.h"
 
 #define RED_COLOR Eigen::Vector3f(1, 0, 0)

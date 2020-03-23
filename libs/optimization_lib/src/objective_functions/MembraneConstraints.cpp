@@ -1,16 +1,16 @@
 ﻿#include "objective_functions/MembraneConstraints.h"
 
-CSTriangle3D::CSTriangle3D() {
-	name = "CSTriangle3D energy";
+MembraneConstraints::MembraneConstraints() {
+	name = "MembraneConstraints energy";
 	w = 1;
 	std::cout << name << " constructor" << std::endl;
 }
 
-CSTriangle3D::~CSTriangle3D() {
+MembraneConstraints::~MembraneConstraints() {
 	std::cout << name << " destructor" << std::endl;
 }
 
-void CSTriangle3D::init()
+void MembraneConstraints::init()
 {
 	if (V.size() == 0 || F.size() == 0)
 		throw name + " must define members V,F before init()!";
@@ -25,14 +25,14 @@ void CSTriangle3D::init()
 	init_hessian();
 }
 
-void CSTriangle3D::setRestShapeFromCurrentConfiguration() {
+void MembraneConstraints::setRestShapeFromCurrentConfiguration() {
 	//edge vectors
 	dXInv.clear();
 	for (int fi = 0; fi < F.rows(); fi++) {
-		Eigen::Vector3d V1 = V.row(F(fi, 1)) - V.row(F(fi, 0));
-		Eigen::Vector3d V2 = V.row(F(fi, 2)) - V.row(F(fi, 0));
+		Eigen::VectorXd V1 = V.row(F(fi, 1)) - V.row(F(fi, 0));
+		Eigen::VectorXd V2 = V.row(F(fi, 2)) - V.row(F(fi, 0));
 		//matrix that holds three edge vectors
-		Matrix2x2 dX; dX << V1[0], V2[0], V1[1], V2[1];
+		Eigen::Matrix2d dX; dX << V1[0], V2[0], V1[1], V2[1];
 		dXInv.push_back(dX.inverse()); //TODO .inverse() is baaad
 	}
 	
@@ -41,7 +41,7 @@ void CSTriangle3D::setRestShapeFromCurrentConfiguration() {
 	restShapeArea /= 2;
 }
 
-Eigen::VectorXd CSTriangle3D::getMass() {
+Eigen::VectorXd MembraneConstraints::getMass() {
 	return massDensity * restShapeArea;
 }
 
@@ -67,7 +67,7 @@ Eigen::VectorXd CSTriangle3D::getMass() {
 //	//dxdX = dx * dXInv[fi];
 //}
 
-void CSTriangle3D::gradient(Eigen::VectorXd& g, const bool update)
+void MembraneConstraints::gradient(Eigen::VectorXd& g, const bool update)
 {
 	g.conservativeResize(V.rows() * 3);
 	g.setZero();
@@ -75,31 +75,26 @@ void CSTriangle3D::gradient(Eigen::VectorXd& g, const bool update)
 	//compute the gradient of the energy using the chain rule: dE/dx = dE/dF * dF/dx. dE/dF is the first Piola-Kirchoff stress sensor, for which nice expressions exist.
 	//compute the deformation gradient
 	for (int fi = 0; fi < F.rows(); fi++) {
-		dEdF[fi].setZero();
-
-		strain[fi] = FF[fi].transpose() * FF[fi];
-		strain[fi](0, 0) -= 1; strain[fi](1, 1) -= 1;
-		strain[fi] *= 0.5;
-
-		Matrix2x2 stress = 2 * shearModulus * strain[fi];
+		Eigen::Matrix2d stress = 2 * shearModulus * strain[fi];
 		stress(0, 0) += bulkModulus * (strain[fi](0, 0) + strain[fi](1, 1));
 		stress(1, 1) += bulkModulus * (strain[fi](0, 0) + strain[fi](1, 1));
-		dEdF[fi] = FF[fi] * stress;
-
+		
+		Eigen::Matrix<double, 3, 2> dEdF = FF[fi] * stress;
+		
 		//dF/dx is going to be some +/- Xinv terms. The forces on nodes 1,2 can be writen as: dE/dF * XInv', while the force on node 0 is -f1-f2;
 		Eigen::Vector3d dEdx[3];
 		dEdx[1] =
 			Eigen::Vector3d(
-				dEdF[fi](0, 0) * dXInv[fi](0, 0) + dEdF[fi](0, 1) * dXInv[fi](0, 1),
-				dEdF[fi](1, 0) * dXInv[fi](0, 0) + dEdF[fi](1, 1) * dXInv[fi](0, 1),
-				dEdF[fi](2, 0)*dXInv[fi](0, 0) + dEdF[fi](2, 1)*dXInv[fi](0, 1)
+				dEdF(0, 0) * dXInv[fi](0, 0) + dEdF(0, 1) * dXInv[fi](0, 1),
+				dEdF(1, 0) * dXInv[fi](0, 0) + dEdF(1, 1) * dXInv[fi](0, 1),
+				dEdF(2, 0) * dXInv[fi](0, 0) + dEdF(2, 1) * dXInv[fi](0, 1)
 			) * restShapeArea;
 
 		dEdx[2] =
 			Eigen::Vector3d(
-				dEdF[fi](0, 0) * dXInv[fi](1, 0) + dEdF[fi](0, 1) * dXInv[fi](1, 1),
-				dEdF[fi](1, 0) * dXInv[fi](1, 0) + dEdF[fi](1, 1) * dXInv[fi](1, 1),
-				dEdF[fi](2, 0)*dXInv[fi](1, 0) + dEdF[fi](2, 1)*dXInv[fi](1, 1)
+				dEdF(0, 0) * dXInv[fi](1, 0) + dEdF(0, 1) * dXInv[fi](1, 1),
+				dEdF(1, 0) * dXInv[fi](1, 0) + dEdF(1, 1) * dXInv[fi](1, 1),
+				dEdF(2, 0) * dXInv[fi](1, 0) + dEdF(2, 1) * dXInv[fi](1, 1)
 			) * restShapeArea;
 		dEdx[0] = -dEdx[1] - dEdx[2];
 
@@ -112,32 +107,32 @@ void CSTriangle3D::gradient(Eigen::VectorXd& g, const bool update)
 		gradient_norm = g.norm();
 }
 
-void CSTriangle3D::updateX(const Eigen::VectorXd& X)
+void MembraneConstraints::updateX(const Eigen::VectorXd& X)
 {
 	assert(X.rows() == (3 * V.rows()));
 	CurrV = Eigen::Map<const Eigen::MatrixXd>(X.data(), X.rows() / 3, 3);
 	FF.clear();
 	for (int fi = 0; fi < F.rows(); fi++) {
 		//edge vectors
-		Eigen::Vector3d v1 = CurrV.row(F(fi, 1)) - CurrV.row(F(fi, 0));
-		Eigen::Vector3d v2 = CurrV.row(F(fi, 2)) - CurrV.row(F(fi, 0));
+		Eigen::VectorXd v1 = CurrV.row(F(fi, 1)) - CurrV.row(F(fi, 0));
+		Eigen::VectorXd v2 = CurrV.row(F(fi, 2)) - CurrV.row(F(fi, 0));
 		Eigen::Matrix<double, 3, 2> dx;
 		dx <<
 			v1(0), v2(0),
 			v1(1), v2(1),
 			v1(2), v2(2);
 		FF.push_back(dx * dXInv[fi]);
+
+		//compute the Green Strain = 1/2 * (F'F-I)
+		strain.push_back(FF[fi].transpose() * FF[fi]);
+		strain[fi](0, 0) -= 1; strain[fi](1, 1) -= 1;
+		strain[fi] *= 0.5;
 	}
 }
 
-
-double CSTriangle3D::value(const bool update) {
+double MembraneConstraints::value(const bool update) {
 	double total_energy = 0;
 	for (int fi = 0; fi < F.rows(); fi++) {
-		//compute the Green Strain = 1/2 * (F'F-I)
-		strain[fi] = FF[fi].transpose() * FF[fi];
-		strain[fi](0, 0) -= 1; strain[fi](1, 1) -= 1;
-		strain[fi] *= 0.5;
 		//add the deviatoric part of the energy, which penalizes the change in the shape of the element - the frobenius norm of E [tr (E'E)] measures just that
 		double energyDensity = shearModulus * strain[fi].squaredNorm();
 		//and the volumetric/hydrostatic part, which is approximated as the trace of E and aims to maintain a constant volume
@@ -153,16 +148,15 @@ double CSTriangle3D::value(const bool update) {
 	return total_energy;
 }
 
-
-void CSTriangle3D::init_hessian() {
-
-}
-
-void CSTriangle3D::hessian() {
+void MembraneConstraints::init_hessian() {
 
 }
 
-void CSTriangle3D::addEnergyHessianTo(const dVector& x) {
+void MembraneConstraints::hessian() {
+
+}
+
+void MembraneConstraints::addEnergyHessianTo(const Eigen::VectorXd& x) {
 	/*
 	Most of this is simply copied from CSTElement2D.
 	 The only thing that's different is that some matrices are 3x2 or 3x3 as opposed to 2x2.

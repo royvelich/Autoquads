@@ -1,33 +1,11 @@
 #pragma once
-
 #include "libs/optimization_lib/include/objective_functions/ObjectiveFunction.h"
-
-//#include <FEMSimLib/SimMeshElement.h>
-//#include <FEMSimLib/Node.h>
-//#include <MathLib/MathLib.h>
-//#include <MathLib/Matrix.h>
-
-
-typedef Eigen::Matrix<double, 2, 3> Matrix2x3;
-
-typedef Eigen::AngleAxisd AngleAxisd;
-typedef Eigen::VectorXd dVector;
-typedef Eigen::Vector3d Vector3d;
-typedef Eigen::MatrixXd MatrixNxM;
-typedef Eigen::Matrix3d Matrix3x3;
-typedef Eigen::SparseMatrix<double> SparseMatrix;
-typedef Eigen::Triplet<double> MTriplet;
-
-typedef Eigen::Matrix2d Matrix2x2;
-typedef Eigen::Matrix4d Matrix4x4;
-typedef Eigen::Vector2d Vector2d;
-typedef Eigen::Vector4d Vector4d;
 
 /*
 	This class implements Constant Strain Triangles elements in 3D
 	Mostly the same as CSTElement2D except for matrix sizes
 */
-class CSTriangle3D : public ObjectiveFunction {
+class MembraneConstraints : public ObjectiveFunction {
 	
 private:
 	//material parameters...
@@ -42,10 +20,10 @@ private:
 	//parameters needed for gradient and hessian of the energy
 	//Eigen::Vector3d dEdx[3];
 	Eigen::MatrixXd CurrV;
-	std::vector < Matrix3x3> ddEdxdx[3][3];
+	std::vector < Eigen::Matrix3d> ddEdxdx[3][3];
 	//tmp matrices used to speed up computation of the deformation gradient, green strain, etc
-	std::vector<Matrix2x2> dXInv, strain;
-	std::vector<Eigen::Matrix<double, 3, 2>> FF, dEdF;
+	std::vector<Eigen::Matrix2d> dXInv, strain;
+	std::vector<Eigen::Matrix<double, 3, 2>> FF;
 
 	
 	//as a deformation measure, we need to compute the deformation gradient F. F maps deformed vectors dx to undeformed coords dX: dx = F*dX.
@@ -65,12 +43,12 @@ private:
 		bulkModulus = K;
 	}
 	Eigen::VectorXd getMass();
-	void addEnergyHessianTo(const dVector& x);
+	void addEnergyHessianTo(const Eigen::VectorXd& x);
 
 	virtual void init_hessian();
 public:
-	CSTriangle3D();
-	~CSTriangle3D();
+	MembraneConstraints();
+	~MembraneConstraints();
 	virtual void init();
 	
 	virtual void updateX(const Eigen::VectorXd& X);

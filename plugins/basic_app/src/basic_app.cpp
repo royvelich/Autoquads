@@ -1223,16 +1223,21 @@ void basic_app::initializeSolver(const int index)
 	auto bendingEdge = std::make_unique<BendingEdge>();
 	bendingEdge->init_mesh(V, F);
 	bendingEdge->init();
+	auto membraneConstraints = std::make_unique<MembraneConstraints>();
+	membraneConstraints->init_mesh(V, F);
+	membraneConstraints->init();
 	auto constraintsPositional = std::make_shared<PenaltyPositionalConstraints>();
 	constraintsPositional->numV = V.rows();
 	constraintsPositional->numF = F.rows();
 	constraintsPositional->init();
+
 	Outputs[index].HandlesInd = &constraintsPositional->ConstrainedVerticesInd;
 	Outputs[index].HandlesPosDeformed = &constraintsPositional->ConstrainedVerticesPos;
 
 	Outputs[index].totalObjective->objectiveList.clear();
 	Outputs[index].totalObjective->init_mesh(V, F);
 	Outputs[index].totalObjective->objectiveList.push_back(move(bendingEdge));
+	Outputs[index].totalObjective->objectiveList.push_back(move(membraneConstraints));
 	Outputs[index].totalObjective->objectiveList.push_back(move(constraintsPositional));
 	Outputs[index].totalObjective->init();
 
