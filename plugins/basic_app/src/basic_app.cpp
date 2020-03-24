@@ -1220,9 +1220,9 @@ void basic_app::initializeSolver(const int index)
 		return;
 
 	// initialize the energy
-	//auto bendingEdge = std::make_unique<BendingEdge>();
-	//bendingEdge->init_mesh(V, F);
-	//bendingEdge->init();
+	auto bendingEdge = std::make_unique<BendingEdge>();
+	bendingEdge->init_mesh(V, F);
+	bendingEdge->init();
 	auto membraneConstraints = std::make_unique<MembraneConstraints>();
 	membraneConstraints->init_mesh(V, F);
 	membraneConstraints->init();
@@ -1236,7 +1236,7 @@ void basic_app::initializeSolver(const int index)
 
 	Outputs[index].totalObjective->objectiveList.clear();
 	Outputs[index].totalObjective->init_mesh(V, F);
-	//Outputs[index].totalObjective->objectiveList.push_back(move(bendingEdge));
+	Outputs[index].totalObjective->objectiveList.push_back(move(bendingEdge));
 	Outputs[index].totalObjective->objectiveList.push_back(move(membraneConstraints));
 	Outputs[index].totalObjective->objectiveList.push_back(move(constraintsPositional));
 	Outputs[index].totalObjective->init();
