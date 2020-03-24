@@ -5,7 +5,7 @@ class ObjectiveFunction
 {
 public:
 	// mesh vertices and faces
-	Eigen::MatrixX3i F;
+	Eigen::MatrixX3i restShapeF;
 	Eigen::MatrixXd restShapeV;
 
 public:

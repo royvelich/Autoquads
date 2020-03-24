@@ -14,7 +14,7 @@ BendingEdge::~BendingEdge() {
 
 void BendingEdge::init()
 {
-	if (restShapeV.size() == 0 || F.size() == 0)
+	if (restShapeV.size() == 0 || restShapeF.size() == 0)
 		throw name + " must define members V,F before init()!";
 
 	calculateHinges();
@@ -65,8 +65,8 @@ void BendingEdge::updateX(const Eigen::VectorXd& X)
 void BendingEdge::calculateHinges() {
 	std::vector<std::vector<std::vector<int>>> TT;
 	std::vector<Eigen::Vector2d> hinges;
-	igl::triangle_triangle_adjacency(F, TT);
-	assert(TT.size() == F.rows());
+	igl::triangle_triangle_adjacency(restShapeF, TT);
+	assert(TT.size() == restShapeF.rows());
 	
 	///////////////////////////////////////////////////////////
 	//Part 1 - Find unique hinges
@@ -112,13 +112,13 @@ void BendingEdge::calculateHinges() {
 	
 	for (int hi = 0; hi < num_hinges; hi++) {
 		//first triangle vertices
-		int v1 = F(hinges[hi](0), 0);
-		int v2 = F(hinges[hi](0), 1);
-		int v3 = F(hinges[hi](0), 2);
+		int v1 = restShapeF(hinges[hi](0), 0);
+		int v2 = restShapeF(hinges[hi](0), 1);
+		int v3 = restShapeF(hinges[hi](0), 2);
 		//second triangle vertices
-		int V1 = F(hinges[hi](1), 0);
-		int V2 = F(hinges[hi](1), 1);
-		int V3 = F(hinges[hi](1), 2);
+		int V1 = restShapeF(hinges[hi](1), 0);
+		int V2 = restShapeF(hinges[hi](1), 1);
+		int V3 = restShapeF(hinges[hi](1), 2);
 
 		/*
 		* Here we should find x0,x1,x2,x3

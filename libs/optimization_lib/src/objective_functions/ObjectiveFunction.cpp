@@ -9,8 +9,8 @@ void ObjectiveFunction::init_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixX
 	else if (V.cols() == 3) {
 		V3d = V;
 	}
-	this->V = V3d;
-	this->F = F;
+	this->restShapeV = V3d;
+	this->restShapeF = F;
 }
 
 Eigen::VectorXd ObjectiveFunction::FDGradient(const Eigen::VectorXd& X)
@@ -18,7 +18,7 @@ Eigen::VectorXd ObjectiveFunction::FDGradient(const Eigen::VectorXd& X)
 	Eigen::VectorXd g,Xd = X;
 	g.resize(X.rows());
     updateX(Xd);
-    double dX = 1e-9; //10e-6;
+	double dX = 10e-6; //10e-6;
     double f_P, f_M;
 
     //this is a very slow method that evaluates the gradient of the objective function through FD...
@@ -31,7 +31,7 @@ Eigen::VectorXd ObjectiveFunction::FDGradient(const Eigen::VectorXd& X)
         Xd(i) = tmpVal - dX;
         updateX(Xd);
         f_M = value(false);
-
+		
         //now reset the ith param value
         Xd(i) = tmpVal;
         g(i) = (f_P - f_M) / (2 * dX);
@@ -54,7 +54,7 @@ void ObjectiveFunction::FDHessian(const Eigen::VectorXd& X, std::vector<int>& I,
 	
 	Eigen::VectorXd Xd = X;
 	updateX(Xd);
-    double dX = 10e-9;
+	double dX = 10e-6;//10e-9;
     
     for (int i = 0; i < rows; i++) {
         double tmpVal = X(i);
@@ -92,7 +92,7 @@ void ObjectiveFunction::checkGradient(const Eigen::VectorXd& X)
 	assert(FD_gradient.rows() == Analytic_gradient.rows() && "The size of analytic gradient & FD gradient must be equal!");
 	double tol = 1e-4;
 	double eps = 1e-10;
-
+	
 	std::cout << name << ": g.norm() = " << Analytic_gradient.norm() << "(analytic) , " << FD_gradient.norm() << "(FD)" << std::endl;
 	for (int i = 0; i < Analytic_gradient.size(); i++) {
         double absErr = abs(FD_gradient[i] - Analytic_gradient[i]);
@@ -121,11 +121,11 @@ void ObjectiveFunction::checkHessian(const Eigen::VectorXd& X)
 	FDH = Utils::BuildMatrix(I, J, S);
 	
 	assert(H.size() == FDH.size() && "The size of analytic hessian & FD hessian must be equal!");
-	/*std::cout << std::endl << "H = " << std::endl <<
+	std::cout << std::endl << "H = " << std::endl <<
 		H.toDense() << std::endl << "-------------";
 	
 	std::cout << std::endl << "FDH = " << std::endl << 
-		FDH.toDense() << std::endl;*/
+		FDH.toDense() << std::endl;
 
 	std::cout << name << ": testing hessians...\n";
 	for (int i = 0; i < H.rows(); i++) {
