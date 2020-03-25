@@ -249,14 +249,14 @@ void MeshWrapper::GenerateRandom2DSoup(const Eigen::MatrixX3i& f_in, Eigen::Matr
 void MeshWrapper::GenerateIsometric2DSoup(const Eigen::MatrixX3i& f_in, const Eigen::MatrixX3d& v_in, const ED2EIMap& ed_2_ei, const EI2FIsMap& ei_2_fi, Eigen::MatrixX3i& f_out, Eigen::MatrixX2d& v_out)
 {
 	std::vector<bool> face_visit_status;
-	std::vector<std::tuple<RDS::FaceIndex, Eigen::Vector3d, Eigen::Vector3d, RDS::VertexIndex, RDS::VertexIndex>> stack;
+	std::vector<std::tuple<RDS::FaceIndex, std::pair<RDS::VertexIndex, Eigen::Vector3d>, std::pair<RDS::VertexIndex, Eigen::Vector3d>>> stack;
 	GenerateSoupFaces(f_in, f_out);
 	v_out = Eigen::MatrixX2d::Zero(3 * f_out.rows(), 2);
 	face_visit_status.resize(f_out.rows());
 
 	for(int64_t i = 0; i < f_out.rows(); i++)
 	{
-		face_visit_status[i] 
+		face_visit_status[i] = false;
 	}
 	
 
@@ -267,17 +267,17 @@ void MeshWrapper::GenerateIsometric2DSoup(const Eigen::MatrixX3i& f_in, const Ei
 	double edge_length = (v_dom_.row(e_dom_(initial_edge_index, 0)) - v_dom_.row(e_dom_(initial_edge_index, 1))).norm();
 	Eigen::Vector3d initial_v0 = Eigen::Vector3d(0, 0, 0);
 	Eigen::Vector3d initial_v1 = Eigen::Vector3d(edge_length, 0, 0);
-	stack.push_back(std::tuple(0, initial_v0, initial_v1, initial_v0_index, initial_v1_index));
+	stack.push_back(std::tuple(0, std::make_pair(initial_v0_index, initial_v0), std::make_pair(initial_v1_index, initial_v1)));
 
 	
 	
 	while(!stack.empty())
 	{
 		RDS::FaceIndex current_face_index = std::get<0>(stack.back());
-		Eigen::Vector3d current_v0 = std::get<1>(stack.back());
-		Eigen::Vector3d current_v1 = std::get<2>(stack.back());
-		RDS::VertexIndex current_v0_index = std::get<3>(stack.back());
-		RDS::VertexIndex current_v1_index = std::get<4>(stack.back());
+		RDS::VertexIndex current_v0_index = std::get<1>(stack.back()).first;
+		RDS::VertexIndex current_v1_index = std::get<2>(stack.back()).first;
+		Eigen::Vector3d current_v0 = std::get<1>(stack.back()).second;
+		Eigen::Vector3d current_v1 = std::get<2>(stack.back()).second;	
 		auto current_face = f_in.row(current_face_index);
 		for (int i = 0; i < 3; i++)
 		{
@@ -302,7 +302,7 @@ void MeshWrapper::GenerateIsometric2DSoup(const Eigen::MatrixX3i& f_in, const Ei
 	}
 }
 
-void MeshWrapper::GetOrderedVertices(RDS::EdgeIndex edge_index, RDS::FaceIndex face_index, Eigen::Vector3i& vertex_indices)
+void MeshWrapper::GetOrderedVertices(std::pair<RDS::VertexIndex, Eigen::Vector3d> v0_data, std::pair<RDS::VertexIndex, Eigen::Vector3d> v1_data, RDS::FaceIndex face_index, Eigen::Vector3i& vertex_indices)
 {
 	for (int j = 0; j <= 1; j++)
 	{
