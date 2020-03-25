@@ -248,16 +248,36 @@ void MeshWrapper::GenerateRandom2DSoup(const Eigen::MatrixX3i& f_in, Eigen::Matr
 
 void MeshWrapper::GenerateIsometric2DSoup(const Eigen::MatrixX3i& f_in, const Eigen::MatrixX3d& v_in, const ED2EIMap& ed_2_ei, const EI2FIsMap& ei_2_fi, Eigen::MatrixX3i& f_out, Eigen::MatrixX2d& v_out)
 {
-	std::vector<std::pair<RDS::FaceIndex, RDS::EdgeIndex>> stack;
+	std::vector<bool> face_visit_status;
+	std::vector<std::tuple<RDS::FaceIndex, Eigen::Vector3d, Eigen::Vector3d, RDS::VertexIndex, RDS::VertexIndex>> stack;
 	GenerateSoupFaces(f_in, f_out);
 	v_out = Eigen::MatrixX2d::Zero(3 * f_out.rows(), 2);
+	face_visit_status.resize(f_out.rows());
+
+	for(int64_t i = 0; i < f_out.rows(); i++)
+	{
+		face_visit_status[i] 
+	}
+	
 
 	auto first_face = f_in.row(0);
-	RDS::EdgeIndex edge_index = ed_2_ei.at(std::make_pair(first_face(0), first_face(1)));
-	stack.push_back(std::pair(0, edge_index));
+	RDS::EdgeIndex initial_edge_index = ed_2_ei.at(std::make_pair(first_face(0), first_face(1)));
+	RDS::VertexIndex initial_v0_index = e_dom_(initial_edge_index, 0);
+	RDS::VertexIndex initial_v1_index = e_dom_(initial_edge_index, 1);
+	double edge_length = (v_dom_.row(e_dom_(initial_edge_index, 0)) - v_dom_.row(e_dom_(initial_edge_index, 1))).norm();
+	Eigen::Vector3d initial_v0 = Eigen::Vector3d(0, 0, 0);
+	Eigen::Vector3d initial_v1 = Eigen::Vector3d(edge_length, 0, 0);
+	stack.push_back(std::tuple(0, initial_v0, initial_v1, initial_v0_index, initial_v1_index));
+
+	
+	
 	while(!stack.empty())
 	{
-		RDS::FaceIndex current_face_index = stack.back().first;
+		RDS::FaceIndex current_face_index = std::get<0>(stack.back());
+		Eigen::Vector3d current_v0 = std::get<1>(stack.back());
+		Eigen::Vector3d current_v1 = std::get<2>(stack.back());
+		RDS::VertexIndex current_v0_index = std::get<3>(stack.back());
+		RDS::VertexIndex current_v1_index = std::get<4>(stack.back());
 		auto current_face = f_in.row(current_face_index);
 		for (int i = 0; i < 3; i++)
 		{
@@ -270,10 +290,15 @@ void MeshWrapper::GenerateIsometric2DSoup(const Eigen::MatrixX3i& f_in, const Ei
 			{
 				if(adjacent_face_index != current_face_index)
 				{
-					stack.push_back(std::make_pair(adjacent_face_index, edge_index));
+					stack.push_back(std::make_pair(adjacent_face_index, current_v0, current_v1));
 				}
 			}
-		}		
+		}
+
+		Eigen::Vector3i vertex_indices;
+		GetOrderedVertices(current_face_index, current_edge_index, vertex_indices);
+
+		stack.pop_back();
 	}
 }
 
