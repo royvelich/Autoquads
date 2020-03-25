@@ -1,7 +1,13 @@
 ﻿#include "objective_functions/MembraneConstraints.h"
 
 MembraneConstraints::MembraneConstraints() {
-	name = "MembraneConstraints energy";
+	type = Material::SYMMETRIC_DIRICHLET;
+	if (type == Material::STVK) {
+		name = "STVK";
+	}
+	else if (type == Material::SYMMETRIC_DIRICHLET) {
+		name = "Symmetric Dirichlet";
+	}
 	w = 1;
 	std::cout << name << " constructor" << std::endl;
 }
@@ -45,7 +51,7 @@ void MembraneConstraints::updateX(const Eigen::VectorXd& X)
 {
 	assert(X.rows() == (3 * restShapeV.rows()));
 	CurrV = Eigen::Map<const Eigen::MatrixXd>(X.data(), X.rows() / 3, 3);
-	FF.clear();
+	F.clear();
 	strain.clear();
 	for (int fi = 0; fi < restShapeF.rows(); fi++) {
 		//edge vectors
@@ -57,10 +63,10 @@ void MembraneConstraints::updateX(const Eigen::VectorXd& X)
 			v1(1), v2(1),
 			v1(2), v2(2);
 		
-		FF.push_back(dx * dXInv[fi]);
+		F.push_back(dx * dXInv[fi]);
 
 		//compute the Green Strain = 1/2 * (F'F-I)
-		strain.push_back(FF[fi].transpose() * FF[fi]);
+		strain.push_back(F[fi].transpose() * F[fi]);
 		strain[fi](0, 0) -= 1; strain[fi](1, 1) -= 1;
 		strain[fi] *= 0.5;
 	}
@@ -70,11 +76,15 @@ double MembraneConstraints::value(const bool update) {
 	
 	Eigen::VectorXd Energy(restShapeF.rows());
 	for (int fi = 0; fi < restShapeF.rows(); fi++) {
-		//add the deviatoric part of the energy, which penalizes the change in the shape of the element - the frobenius norm of E [tr (E'E)] measures just that
-		Energy(fi) = shearModulus * strain[fi].squaredNorm();
-		//and the volumetric/hydrostatic part, which is approximated as the trace of E and aims to maintain a constant volume
-		Energy(fi) += (bulkModulus / 2) * pow(strain[fi].trace(),2);
+		if (type == Material::STVK) {
+			Energy(fi) = shearModulus * strain[fi].squaredNorm();
+			Energy(fi) += (bulkModulus / 2) * pow(strain[fi].trace(), 2);
+		}
+		else if (type == Material::SYMMETRIC_DIRICHLET) {
+			Energy(fi) = 0.5 * (1 + 1/ pow(strain[fi].determinant(),2)) * strain[fi].squaredNorm();
+		}
 	}
+
 	double total_energy = restShapeArea.transpose() * Energy;
 
 	if (update) {
@@ -103,18 +113,36 @@ void MembraneConstraints::gradient(Eigen::VectorXd& g, const bool update)
 		
 		Eigen::Matrix<double, 4, 6> dstrain_dF;
 		dstrain_dF <<
-			FF[fi](0, 0)	, 0					, FF[fi](1, 0)		, 0					, FF[fi](2, 0)		, 0					,
-			0.5*FF[fi](0, 1), 0.5*FF[fi](0, 0)	, 0.5*FF[fi](1, 1)	, 0.5*FF[fi](1, 0)	, 0.5*FF[fi](2, 1)	, 0.5*FF[fi](2, 0)	,
-			0.5*FF[fi](0, 1), 0.5*FF[fi](0, 0)	, 0.5*FF[fi](1, 1)	, 0.5*FF[fi](1, 0)	, 0.5*FF[fi](2, 1)	, 0.5*FF[fi](2, 0)	,
-			0				, FF[fi](0, 1)		, 0					, FF[fi](1, 1)		, 0					, FF[fi](2, 1);
+			F[fi](0, 0)	, 0					, F[fi](1, 0)		, 0					, F[fi](2, 0)		, 0					,
+			0.5*F[fi](0, 1), 0.5*F[fi](0, 0)	, 0.5*F[fi](1, 1)	, 0.5*F[fi](1, 0)	, 0.5*F[fi](2, 1)	, 0.5*F[fi](2, 0)	,
+			0.5*F[fi](0, 1), 0.5*F[fi](0, 0)	, 0.5*F[fi](1, 1)	, 0.5*F[fi](1, 0)	, 0.5*F[fi](2, 1)	, 0.5*F[fi](2, 0)	,
+			0				, F[fi](0, 1)		, 0					, F[fi](1, 1)		, 0					, F[fi](2, 1);
 		
 		Eigen::Matrix<double, 1, 4> dE_dstrain;
-		dE_dstrain <<
-			2 * shearModulus*strain[fi](0, 0) + bulkModulus * strain[fi].trace(),
-			2 * shearModulus*strain[fi](0, 1),
-			2 * shearModulus*strain[fi](1, 0),
-			2 * shearModulus*strain[fi](1, 1) + bulkModulus * strain[fi].trace();
-		dE_dstrain *= restShapeArea[fi];
+		
+		if (type == Material::STVK) {
+			dE_dstrain <<
+				2 * shearModulus*strain[fi](0, 0) + bulkModulus * strain[fi].trace(),
+				2 * shearModulus*strain[fi](0, 1),
+				2 * shearModulus*strain[fi](1, 0),
+				2 * shearModulus*strain[fi](1, 1) + bulkModulus * strain[fi].trace();
+			dE_dstrain *= restShapeArea[fi];
+		}
+		else if (type == Material::SYMMETRIC_DIRICHLET) {
+			double det = strain[fi].determinant();
+			double a = strain[fi](0, 0);
+			double b = strain[fi](0, 1);
+			double c = strain[fi](1, 0);
+			double d = strain[fi](1, 1);
+			double Fnorm = strain[fi].squaredNorm();
+			dE_dstrain <<
+				a + a / pow(det,2) - d * Fnorm / pow(det, 3),
+				b + b / pow(det, 2) + c * Fnorm / pow(det, 3),
+				c + c / pow(det, 2) + b * Fnorm / pow(det, 3),
+				d + d / pow(det, 2) - a * Fnorm / pow(det, 3);
+			dE_dstrain *= restShapeArea[fi];
+		}
+		
 
 		Eigen::Matrix<double, 1, 9> dE_dX = dE_dstrain*dstrain_dF*dF_dX;
 
@@ -173,26 +201,97 @@ void MembraneConstraints::hessian() {
 
 		Eigen::Matrix<double, 4, 6> dstrain_dF;
 		dstrain_dF <<
-			FF[fi](0, 0), 0, FF[fi](1, 0), 0, FF[fi](2, 0), 0,
-			0.5*FF[fi](0, 1), 0.5*FF[fi](0, 0), 0.5*FF[fi](1, 1), 0.5*FF[fi](1, 0), 0.5*FF[fi](2, 1), 0.5*FF[fi](2, 0),
-			0.5*FF[fi](0, 1), 0.5*FF[fi](0, 0), 0.5*FF[fi](1, 1), 0.5*FF[fi](1, 0), 0.5*FF[fi](2, 1), 0.5*FF[fi](2, 0),
-			0, FF[fi](0, 1), 0, FF[fi](1, 1), 0, FF[fi](2, 1);
+			F[fi](0, 0), 0, F[fi](1, 0), 0, F[fi](2, 0), 0,
+			0.5*F[fi](0, 1), 0.5*F[fi](0, 0), 0.5*F[fi](1, 1), 0.5*F[fi](1, 0), 0.5*F[fi](2, 1), 0.5*F[fi](2, 0),
+			0.5*F[fi](0, 1), 0.5*F[fi](0, 0), 0.5*F[fi](1, 1), 0.5*F[fi](1, 0), 0.5*F[fi](2, 1), 0.5*F[fi](2, 0),
+			0, F[fi](0, 1), 0, F[fi](1, 1), 0, F[fi](2, 1);
 
 		Eigen::Matrix<double, 1, 4> dE_dstrain;
-		dE_dstrain <<
-			2 * shearModulus*strain[fi](0, 0) + bulkModulus * strain[fi].trace(),
-			2 * shearModulus*strain[fi](0, 1),
-			2 * shearModulus*strain[fi](1, 0),
-			2 * shearModulus*strain[fi](1, 1) + bulkModulus * strain[fi].trace();
-		dE_dstrain *= restShapeArea[fi];
-
 		Eigen::Matrix<double, 4, 4> dE_dstraindstrain;
-		dE_dstraindstrain <<
-			2 * shearModulus + bulkModulus	, 0					, 0					, bulkModulus					,
-			0								, 2 * shearModulus	, 0					, 0								,
-			0								, 0					, 2 * shearModulus	, 0								,
-			bulkModulus						, 0					, 0					, 2 * shearModulus + bulkModulus;
-		dE_dstraindstrain *= restShapeArea[fi];
+
+		if (type == Material::STVK) {
+			dE_dstrain <<
+				2 * shearModulus*strain[fi](0, 0) + bulkModulus * strain[fi].trace(),
+				2 * shearModulus*strain[fi](0, 1),
+				2 * shearModulus*strain[fi](1, 0),
+				2 * shearModulus*strain[fi](1, 1) + bulkModulus * strain[fi].trace();
+			dE_dstrain *= restShapeArea[fi];
+
+			dE_dstraindstrain <<
+				2 * shearModulus + bulkModulus, 0, 0, bulkModulus,
+				0, 2 * shearModulus, 0, 0,
+				0, 0, 2 * shearModulus, 0,
+				bulkModulus, 0, 0, 2 * shearModulus + bulkModulus;
+			dE_dstraindstrain *= restShapeArea[fi];
+
+		}
+		else if (type == Material::SYMMETRIC_DIRICHLET) {
+			double det = strain[fi].determinant();
+			double a = strain[fi](0, 0);
+			double b = strain[fi](0, 1);
+			double c = strain[fi](1, 0);
+			double d = strain[fi](1, 1);
+			double Fnorm = strain[fi].squaredNorm();
+			dE_dstrain <<
+				a + a / pow(det, 2) - d * Fnorm / pow(det, 3),
+				b + b / pow(det, 2) + c * Fnorm / pow(det, 3),
+				c + c / pow(det, 2) + b * Fnorm / pow(det, 3),
+				d + d / pow(det, 2) - a * Fnorm / pow(det, 3);
+			dE_dstrain *= restShapeArea[fi];
+
+			double aa = 1
+				+ (1 / pow(det, 2))
+				- ((4 * a*d) / pow(det, 3))
+				+ ((3 * pow(d, 2)*Fnorm) / pow(det, 4));
+
+			double bb = 1
+				+ (1 / pow(det, 2))
+				+ ((4 * b*c) / pow(det, 3))
+				+ ((3 * pow(c, 2)*Fnorm) / pow(det, 4));
+
+			double cc = 1
+				+ (1 / pow(det, 2))
+				+ ((4 * b*c) / pow(det, 3))
+				+ ((3 * pow(b, 2)*Fnorm) / pow(det, 4));
+
+			double dd = 1
+				+ (1 / pow(det, 2))
+				- ((4 * a*d) / pow(det, 3))
+				+ ((3 * pow(a, 2)*Fnorm) / pow(det, 4));
+
+			double ab = (-3 * c*d*Fnorm)
+				+ (2 * (a*c - b*d)*det);
+			ab /= pow(det, 4);
+
+			double ac = (-3 * b*d*Fnorm)
+				+ (2 * (a*b - c*d)*det);
+			ac /= pow(det, 4);
+
+			double ad = (3 * a*d*Fnorm)
+				- ((2 * pow(a, 2) + 2 * pow(d, 2) + Fnorm)*det);
+			ad /= pow(det, 4);
+
+			double bc = (3 * b*c*Fnorm)
+				+ ((2 * pow(b, 2) + 2 * pow(c, 2) + Fnorm)*det);
+			bc /= pow(det, 4);
+
+			double bd = (-3 * a*c*Fnorm)
+				+ (2 * (c*d - a*b)*det);
+			bd /= pow(det, 4);
+
+			double cd = (-3 * a*b*Fnorm)
+				+ (2 * (b*d - a*c)*det);
+			cd /= pow(det, 4);
+
+			dE_dstraindstrain <<
+				aa, ab, ac, ad,
+				ab, bb, bc, bd,
+				ac, bc, cc, cd,
+				ad, bd, cd, dd;
+			dE_dstraindstrain *= restShapeArea[fi];
+		}
+
+		
 
 		Eigen::Matrix<double, 6, 6> ds_dFdF___dE_ds; // ds_dFdF * dE_ds
 		ds_dFdF___dE_ds <<

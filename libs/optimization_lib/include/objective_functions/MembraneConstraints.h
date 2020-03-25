@@ -5,9 +5,16 @@
 	This class implements Constant Strain Triangles elements in 3D
 	Mostly the same as CSTElement2D except for matrix sizes
 */
+enum Material {
+	STVK = 0,
+	SYMMETRIC_DIRICHLET
+};
+
 class MembraneConstraints : public ObjectiveFunction {
 	
 private:
+	//material type
+	Material type;
 	//material parameters...
 	double shearModulus, bulkModulus;
 	//keep track of the rest shape area
@@ -15,7 +22,7 @@ private:
 	Eigen::MatrixXd CurrV;
 	//tmp matrices used to speed up computation of the deformation gradient, green strain, etc
 	std::vector<Eigen::Matrix2d> dXInv, strain;
-	std::vector<Eigen::Matrix<double, 3, 2>> FF;
+	std::vector<Eigen::Matrix<double, 3, 2>> F;
 
 	//sets important properties of the rest shape using the set of points passed in as parameters
 	void setRestShapeFromCurrentConfiguration();
