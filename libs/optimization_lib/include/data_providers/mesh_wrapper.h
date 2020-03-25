@@ -162,6 +162,7 @@ private:
 	void GenerateIsometric2DSoup(const Eigen::MatrixX3i& f_in, const Eigen::MatrixX3d& v_in, const ED2EIMap& ed_2_ei, const EI2FIsMap& ei_dom_2_fi , Eigen::MatrixX3i& f_out, Eigen::MatrixX2d& v_out);
 	void CalculateAxes(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1, const Eigen::Vector3d& v2, Eigen::Vector3d& axis0, Eigen::Vector3d& axis1);
 	void ProjectVertexToPlane(const Eigen::Vector3d& v0_in, const Eigen::Vector3d& v1_in, const Eigen::Vector3d& v2_in, const Eigen::Vector3d& v0_out, const Eigen::Vector3d& v1_out, Eigen::Vector3d& v2_out);
+	void GetOrderedVertices(RDS::EdgeIndex edge_index, RDS::FaceIndex face_index, Eigen::Vector3i& vertex_indices);
 	
 	// Edge descriptor -> edge index map
 	void ComputeEdgeDescriptorMap(const Eigen::MatrixX2i& e, ED2EIMap& ed_2_ei);

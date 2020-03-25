@@ -248,70 +248,66 @@ void MeshWrapper::GenerateRandom2DSoup(const Eigen::MatrixX3i& f_in, Eigen::Matr
 
 void MeshWrapper::GenerateIsometric2DSoup(const Eigen::MatrixX3i& f_in, const Eigen::MatrixX3d& v_in, const ED2EIMap& ed_2_ei, const EI2FIsMap& ei_2_fi, Eigen::MatrixX3i& f_out, Eigen::MatrixX2d& v_out)
 {
-	std::vector<RDS::FaceIndex> stack;
+	std::vector<std::pair<RDS::FaceIndex, RDS::EdgeIndex>> stack;
 	GenerateSoupFaces(f_in, f_out);
 	v_out = Eigen::MatrixX2d::Zero(3 * f_out.rows(), 2);
 
-	auto first_triangle = true;
-	stack.push_back(0);
+	auto first_face = f_in.row(0);
+	RDS::EdgeIndex edge_index = ed_2_ei.at(std::make_pair(first_face(0), first_face(1)));
+	stack.push_back(std::pair(0, edge_index));
 	while(!stack.empty())
 	{
-		auto current_face_index = stack.back();
+		RDS::FaceIndex current_face_index = stack.back().first;
 		auto current_face = f_in.row(current_face_index);
 		for (int i = 0; i < 3; i++)
 		{
-			int64_t current_vertex_index = current_face(i);
-			int64_t next_vertex_index = current_face((i + 1) % 3);
+			RDS::VertexIndex current_vertex_index = current_face(i);
+			RDS::VertexIndex next_vertex_index = current_face((i + 1) % 3);
 			
 			RDS::EdgeIndex edge_index = ed_2_ei.at(std::make_pair(current_vertex_index , next_vertex_index));
 			auto adjacent_faces = ei_2_fi.at(edge_index);
-			for(auto adjacent_face_index : adjacent_faces)
+			for(RDS::FaceIndex adjacent_face_index : adjacent_faces)
 			{
 				if(adjacent_face_index != current_face_index)
 				{
-					
+					stack.push_back(std::make_pair(adjacent_face_index, edge_index));
 				}
 			}
-		}
-		
-		
-		stack.pop_back();
-		auto adjacent_faces = fi_2_fi_in.at(current_face_index);
-		for(std::size_t i = 0; i < adjacent_faces.size(); i++)
+		}		
+	}
+}
+
+void MeshWrapper::GetOrderedVertices(RDS::EdgeIndex edge_index, RDS::FaceIndex face_index, Eigen::Vector3i& vertex_indices)
+{
+	for (int j = 0; j <= 1; j++)
+	{
+		RDS::VertexIndex v0_index = e_dom_(edge_index, j % 2);
+		RDS::VertexIndex v1_index = e_dom_(edge_index, (j + 1) % 2);
+		RDS::VertexIndex v2_index;
+
+		for (int i = 0; i < 3; i++)
 		{
-			stack.push_back(adjacent_faces[i]);
+			RDS::VertexIndex current_vertex_index = f_dom_(face_index, 0);
+			if ((current_vertex_index != v0_index) && (current_vertex_index != v1_index))
+			{
+				v2_index = current_vertex_index;
+			}
 		}
 
-		if(first_triangle)
+		Eigen::Vector3d v0 = v_dom_.row(v0_index);
+		Eigen::Vector3d v1 = v_dom_.row(v1_index);
+		Eigen::Vector3d v2 = v_dom_.row(v2_index);
+
+		const Eigen::Vector3d vec0_in = v0 - v1;
+		const Eigen::Vector3d vec1_in = v2 - v1;
+		Eigen::Vector3d cross = vec0_in.cross(vec1_in);
+		
+		if(cross.z() > 0)
 		{
-			auto face_vertex_indices = f_in.row(current_face_index);
-			const auto v0_index = face_vertex_indices[0];
-			const auto v1_index = face_vertex_indices[1];
-			const auto v2_index = face_vertex_indices[2];
-			auto v0 = v_in.row(v0_index);
-			auto v1 = v_in.row(v1_index);
-			auto v2 = v_in.row(v2_index);
-
-			Eigen::Vector3d axis0_in;
-			Eigen::Vector3d axis1_in;
-			
-			CalculateAxes(v0, v1, v2, axis0_in, axis1_in);
-
-			Eigen::Vector3d vec0 = v1 - v0;
-			Eigen::Vector3d vec1 = v2 - v0;
-
-			Eigen::Vector3d normal_in = v0.cross(v1);
-			normal_in.normalize();
-
-			Eigen::Matrix3d axis_rotation;
-			axis_rotation = Eigen::AngleAxisd(-M_PI / 2, normal_in);
-
-			Eigen::Vector3d axis0_in = vec0.normalized();
-			Eigen::Vector3d axis1_in = (axis_rotation * axis0_in).normalized();
-
-
-			
-			Eigen::Vector3d v0_out = Eigen::Vector3d::Zero();
+			vertex_indices(0) = v0_index;
+			vertex_indices(1) = v1_index;
+			vertex_indices(2) = v2_index;
+			break;
 		}
 	}
 }
