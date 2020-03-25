@@ -11,6 +11,11 @@
 class Utils
 {
 public:
+	enum Material {
+		STVK = 0,
+		SYMMETRIC_DIRICHLET
+	};
+
 	static enum LineSearch {
 		GradientNorm = 0,
 		FunctionValue = 1,

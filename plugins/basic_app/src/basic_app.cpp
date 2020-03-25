@@ -1223,9 +1223,12 @@ void basic_app::initializeSolver(const int index)
 	auto bendingEdge = std::make_unique<BendingEdge>();
 	bendingEdge->init_mesh(V, F);
 	bendingEdge->init();
-	auto membraneConstraints = std::make_unique<MembraneConstraints>();
-	membraneConstraints->init_mesh(V, F);
-	membraneConstraints->init();
+	auto SymmDirich = std::make_unique<MembraneConstraints>(Utils::SYMMETRIC_DIRICHLET);
+	SymmDirich->init_mesh(V, F);
+	SymmDirich->init();
+	auto STVK = std::make_unique<MembraneConstraints>(Utils::STVK);
+	STVK->init_mesh(V, F);
+	STVK->init();
 	auto constraintsPositional = std::make_shared<PenaltyPositionalConstraints>();
 	constraintsPositional->numV = V.rows();
 	constraintsPositional->numF = F.rows();
@@ -1237,7 +1240,8 @@ void basic_app::initializeSolver(const int index)
 	Outputs[index].totalObjective->objectiveList.clear();
 	Outputs[index].totalObjective->init_mesh(V, F);
 	Outputs[index].totalObjective->objectiveList.push_back(move(bendingEdge));
-	Outputs[index].totalObjective->objectiveList.push_back(move(membraneConstraints));
+	Outputs[index].totalObjective->objectiveList.push_back(move(SymmDirich));
+	Outputs[index].totalObjective->objectiveList.push_back(move(STVK));
 	Outputs[index].totalObjective->objectiveList.push_back(move(constraintsPositional));
 	Outputs[index].totalObjective->init();
 

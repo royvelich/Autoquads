@@ -1,11 +1,11 @@
 ﻿#include "objective_functions/MembraneConstraints.h"
 
-MembraneConstraints::MembraneConstraints() {
-	type = Material::SYMMETRIC_DIRICHLET;
-	if (type == Material::STVK) {
+MembraneConstraints::MembraneConstraints(Utils::Material type) {
+	this->type = type;
+	if (type == Utils::STVK) {
 		name = "STVK";
 	}
-	else if (type == Material::SYMMETRIC_DIRICHLET) {
+	else if (type == Utils::SYMMETRIC_DIRICHLET) {
 		name = "Symmetric Dirichlet";
 	}
 	w = 1;
@@ -76,11 +76,11 @@ double MembraneConstraints::value(const bool update) {
 	
 	Eigen::VectorXd Energy(restShapeF.rows());
 	for (int fi = 0; fi < restShapeF.rows(); fi++) {
-		if (type == Material::STVK) {
+		if (type == Utils::STVK) {
 			Energy(fi) = shearModulus * strain[fi].squaredNorm();
 			Energy(fi) += (bulkModulus / 2) * pow(strain[fi].trace(), 2);
 		}
-		else if (type == Material::SYMMETRIC_DIRICHLET) {
+		else if (type == Utils::SYMMETRIC_DIRICHLET) {
 			Energy(fi) = 0.5 * (1 + 1/ pow(strain[fi].determinant(),2)) * strain[fi].squaredNorm();
 		}
 	}
@@ -120,7 +120,7 @@ void MembraneConstraints::gradient(Eigen::VectorXd& g, const bool update)
 		
 		Eigen::Matrix<double, 1, 4> dE_dstrain;
 		
-		if (type == Material::STVK) {
+		if (type == Utils::STVK) {
 			dE_dstrain <<
 				2 * shearModulus*strain[fi](0, 0) + bulkModulus * strain[fi].trace(),
 				2 * shearModulus*strain[fi](0, 1),
@@ -128,7 +128,7 @@ void MembraneConstraints::gradient(Eigen::VectorXd& g, const bool update)
 				2 * shearModulus*strain[fi](1, 1) + bulkModulus * strain[fi].trace();
 			dE_dstrain *= restShapeArea[fi];
 		}
-		else if (type == Material::SYMMETRIC_DIRICHLET) {
+		else if (type == Utils::SYMMETRIC_DIRICHLET) {
 			double det = strain[fi].determinant();
 			double a = strain[fi](0, 0);
 			double b = strain[fi](0, 1);
@@ -209,7 +209,7 @@ void MembraneConstraints::hessian() {
 		Eigen::Matrix<double, 1, 4> dE_dstrain;
 		Eigen::Matrix<double, 4, 4> dE_dstraindstrain;
 
-		if (type == Material::STVK) {
+		if (type == Utils::STVK) {
 			dE_dstrain <<
 				2 * shearModulus*strain[fi](0, 0) + bulkModulus * strain[fi].trace(),
 				2 * shearModulus*strain[fi](0, 1),
@@ -225,7 +225,7 @@ void MembraneConstraints::hessian() {
 			dE_dstraindstrain *= restShapeArea[fi];
 
 		}
-		else if (type == Material::SYMMETRIC_DIRICHLET) {
+		else if (type == Utils::SYMMETRIC_DIRICHLET) {
 			double det = strain[fi].determinant();
 			double a = strain[fi](0, 0);
 			double b = strain[fi](0, 1);

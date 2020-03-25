@@ -5,16 +5,13 @@
 	This class implements Constant Strain Triangles elements in 3D
 	Mostly the same as CSTElement2D except for matrix sizes
 */
-enum Material {
-	STVK = 0,
-	SYMMETRIC_DIRICHLET
-};
+
 
 class MembraneConstraints : public ObjectiveFunction {
 	
 private:
 	//material type
-	Material type;
+	Utils::Material type;
 	//material parameters...
 	double shearModulus, bulkModulus;
 	//keep track of the rest shape area
@@ -28,7 +25,7 @@ private:
 	void setRestShapeFromCurrentConfiguration();
 	virtual void init_hessian();
 public:
-	MembraneConstraints();
+	MembraneConstraints(Utils::Material type);
 	~MembraneConstraints();
 	virtual void init();
 	
