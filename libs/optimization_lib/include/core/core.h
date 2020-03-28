@@ -37,6 +37,7 @@ namespace RDS
 	using FaceFanSlice = std::pair<VertexIndex, std::pair<VertexIndex, VertexIndex>>;
 	using FaceFan = std::vector<FaceFanSlice>;
 	using FaceFans = std::vector<FaceFan>;
+	using ProjectionDescriptor = std::pair<RDS::VertexIndex, Eigen::Vector2d>;
 
 	/**
 	 * Enums

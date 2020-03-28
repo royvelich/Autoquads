@@ -249,7 +249,7 @@ void MeshWrapper::GenerateRandom2DSoup(const Eigen::MatrixX3i& f_in, Eigen::Matr
 void MeshWrapper::GenerateIsometric2DSoup(const Eigen::MatrixX3i& f_in, const Eigen::MatrixX3d& v_in, const ED2EIMap& ed_2_ei, const EI2FIsMap& ei_2_fi, Eigen::MatrixX3i& f_out, Eigen::MatrixX2d& v_out)
 {
 	std::vector<bool> face_visit_status;
-	std::vector<std::tuple<RDS::FaceIndex, std::pair<RDS::VertexIndex, Eigen::Vector3d>, std::pair<RDS::VertexIndex, Eigen::Vector3d>>> stack;
+	std::vector<std::tuple<RDS::FaceIndex, RDS::ProjectionDescriptor, RDS::ProjectionDescriptor>> stack;
 	GenerateSoupFaces(f_in, f_out);
 	v_out = Eigen::MatrixX2d::Zero(3 * f_out.rows(), 2);
 	face_visit_status.resize(f_out.rows());
@@ -264,22 +264,36 @@ void MeshWrapper::GenerateIsometric2DSoup(const Eigen::MatrixX3i& f_in, const Ei
 	RDS::VertexIndex initial_v0_index = e_dom_(initial_edge_index, 0);
 	RDS::VertexIndex initial_v1_index = e_dom_(initial_edge_index, 1);
 	double edge_length = (v_dom_.row(e_dom_(initial_edge_index, 0)) - v_dom_.row(e_dom_(initial_edge_index, 1))).norm();
-	Eigen::Vector3d initial_v0 = Eigen::Vector3d(0, 0, 0);
-	Eigen::Vector3d initial_v1 = Eigen::Vector3d(edge_length, 0, 0);
+	Eigen::Vector2d initial_v0 = Eigen::Vector2d(0, 0);
+	Eigen::Vector2d initial_v1 = Eigen::Vector2d(edge_length, 0);
 	stack.push_back(std::tuple(0, std::make_pair(initial_v0_index, initial_v0), std::make_pair(initial_v1_index, initial_v1)));
 
 	while(!stack.empty())
 	{
 		RDS::FaceIndex current_face_index = std::get<0>(stack.back());
-		std::pair<RDS::VertexIndex, Eigen::Vector3d> pair0_in = std::get<1>(stack.back());
-		std::pair<RDS::VertexIndex, Eigen::Vector3d> pair1_in = std::get<2>(stack.back());
-		
-		auto current_face = f_in.row(current_face_index);
+		RDS::ProjectionDescriptor pair0_in = std::get<1>(stack.back());
+		RDS::ProjectionDescriptor pair1_in = std::get<2>(stack.back());
+
+		std::vector<RDS::ProjectionDescriptor> input_pairs;
+		std::vector<RDS::ProjectionDescriptor> output_pairs;
+		input_pairs.push_back(pair0_in);
+		input_pairs.push_back(pair1_in);
+
+		GetOrderedProjectedVertices(input_pairs, current_face_index, output_pairs);
+		RDS::VertexIndex base_index = current_face_index * 3;
+		for(int i = 0; i < 3; i++)
+		{
+			v_out.row(base_index + i) = output_pairs[i].second;
+		}
+
 		face_visit_status[current_face_index] = true;
 		for (int i = 0; i < 3; i++)
 		{
-			RDS::VertexIndex current_vertex_index = current_face(i);
-			RDS::VertexIndex next_vertex_index = current_face((i + 1) % 3);
+			RDS::ProjectionDescriptor first_pair = output_pairs[i];
+			RDS::ProjectionDescriptor second_pair = output_pairs[(i + 1) % 3];
+			
+			RDS::VertexIndex current_vertex_index = first_pair.first;
+			RDS::VertexIndex next_vertex_index = second_pair.first;
 			RDS::EdgeIndex edge_index = ed_2_ei.at(std::make_pair(current_vertex_index , next_vertex_index));
 			auto adjacent_faces = ei_2_fi.at(edge_index);
 			for(RDS::FaceIndex adjacent_face_index : adjacent_faces)
@@ -288,39 +302,24 @@ void MeshWrapper::GenerateIsometric2DSoup(const Eigen::MatrixX3i& f_in, const Ei
 				{
 					if (!face_visit_status[adjacent_face_index])
 					{
-						std::vector<std::pair<RDS::VertexIndex, Eigen::Vector3d>> input_pairs;
-						std::vector<std::pair<RDS::VertexIndex, Eigen::Vector3d>> output_pairs;
-						input_pairs.push_back(pair0_in);
-						input_pairs.push_back(pair1_in);
-
-						GetOrderedProjectedVertices(input_pairs, adjacent_face_index, output_pairs);
-
-						for(int i = 0; i < 3; i++)
-						{
-							
-						}
-						
-						//stack.push_back(std::make_pair(adjacent_face_index, current_v0, current_v1));
+						stack.push_back(std::make_tuple(adjacent_face_index, first_pair, second_pair));
 					}
 				}
 			}
 		}
 
-		//Eigen::Vector3i vertex_indices;
-		//GetOrderedProjectedVertices(current_face_index, current_edge_index, vertex_indices);
-
 		stack.pop_back();
 	}
 }
 
-void MeshWrapper::GetOrderedProjectedVertices(const std::vector<std::pair<RDS::VertexIndex, Eigen::Vector3d>>& input_pairs, RDS::FaceIndex face_index, std::vector<std::pair<RDS::VertexIndex, Eigen::Vector3d>>& output_pairs)
+void MeshWrapper::GetOrderedProjectedVertices(const std::vector<RDS::ProjectionDescriptor>& input_pairs, RDS::FaceIndex face_index, std::vector<RDS::ProjectionDescriptor>& output_pairs)
 {
 	output_pairs.resize(3);
 	for (int j = 0; j <= 1; j++)
 	{
-		const std::pair<RDS::VertexIndex, Eigen::Vector3d> pair0 = input_pairs[j % 2];
-		const std::pair<RDS::VertexIndex, Eigen::Vector3d> pair1 = input_pairs[(j + 1) % 2];
-		std::pair<RDS::VertexIndex, Eigen::Vector3d> pair2;
+		const RDS::ProjectionDescriptor pair0 = input_pairs[j % 2];
+		const RDS::ProjectionDescriptor pair1 = input_pairs[(j + 1) % 2];
+		RDS::ProjectionDescriptor pair2;
 
 		for (int i = 0; i < 3; i++)
 		{
@@ -341,10 +340,10 @@ void MeshWrapper::GetOrderedProjectedVertices(const std::vector<std::pair<RDS::V
 		
 		if(cross.z() > 0)
 		{
-			Eigen::Vector3d v0_out = pair0.second;
-			Eigen::Vector3d v1_out = pair1.second;
+			Eigen::Vector2d v0_out = pair0.second;
+			Eigen::Vector2d v1_out = pair1.second;
+			Eigen::Vector2d v2_out = Eigen::Vector2d::Zero();
 			
-			Eigen::Vector3d v2_out = Eigen::Vector3d::Zero();
 			ProjectVertexToPlane(v0_in, v1_in, v2_in, v0_out, v1_out, pair2.second);
 
 			output_pairs[0] = pair0;
@@ -355,7 +354,7 @@ void MeshWrapper::GetOrderedProjectedVertices(const std::vector<std::pair<RDS::V
 	}
 }
 
-void MeshWrapper::ProjectVertexToPlane(const Eigen::Vector3d& v0_in, const Eigen::Vector3d& v1_in, const Eigen::Vector3d& v2_in, const Eigen::Vector3d& v0_out, const Eigen::Vector3d& v1_out, Eigen::Vector3d& v2_out)
+void MeshWrapper::ProjectVertexToPlane(const Eigen::Vector3d& v0_in, const Eigen::Vector3d& v1_in, const Eigen::Vector3d& v2_in, const Eigen::Vector2d& v0_out, const Eigen::Vector2d& v1_out, Eigen::Vector2d& v2_out)
 {
 	const Eigen::Vector3d vec0_in = v1_in - v0_in;
 	const Eigen::Vector3d vec1_in = v2_in - v0_in;
@@ -375,10 +374,13 @@ void MeshWrapper::ProjectVertexToPlane(const Eigen::Vector3d& v0_in, const Eigen
 	const Eigen::Vector3d roation_axis_out = Eigen::Vector3d(0, 0, 1);
 	Eigen::Matrix3d rotation_out;
 	rotation_out = Eigen::AngleAxisd(-M_PI / 2, roation_axis_out);
-	const Eigen::Vector3d vec0_out = v1_out - v0_out;
-	const Eigen::Vector3d axis0_out = vec0_out.normalized();
-	const Eigen::Vector3d axis1_out = (rotation_out * axis0_out).normalized();
-
+	const Eigen::Vector2d vec0_out = v1_out - v0_out;
+	const Eigen::Vector2d axis0_out = vec0_out.normalized();
+	const Eigen::Vector3d axis0_3d_out = Eigen::Vector3d(axis0_out.x(), axis0_out.y(), 0);
+	
+	const Eigen::Vector3d axis1_3d_out = (rotation_out * axis0_3d_out).normalized();
+	const Eigen::Vector2d axis1_out = Eigen::Vector2d(axis1_3d_out.x(), axis1_3d_out.y());
+	
 	v2_out = v0_out + axis0_projection * axis0_out + axis1_projection * axis1_out;
 }
 
