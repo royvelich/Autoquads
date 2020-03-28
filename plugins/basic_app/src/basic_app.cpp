@@ -1092,9 +1092,9 @@ void basic_app::checkGradients()
 			solver_on = false;
 			return;
 		}
+		Eigen::VectorXd xx = Eigen::VectorXd::Random(InputModel().V.size()) * 10;
+		//Eigen::VectorXd xx = Eigen::Map<const Eigen::VectorXd>(OutputModel(i).V.data(), OutputModel(i).V.size());
 		for (auto const &objective : Outputs[i].totalObjective->objectiveList) {
-			Eigen::VectorXd xx = Eigen::VectorXd::Random(InputModel().V.size()) * 10;
-			//Eigen::VectorXd xx = Eigen::Map<const Eigen::VectorXd>(OutputModel(i).V.data(), OutputModel(i).V.size());
 			objective->checkGradient(xx);
 		}
 	}
@@ -1108,9 +1108,9 @@ void basic_app::checkHessians()
 			solver_on = false;
 			return;
 		}
+		Eigen::VectorXd xx = Eigen::VectorXd::Random(InputModel().V.size()) * 10;
+		//Eigen::VectorXd xx = Eigen::Map<const Eigen::VectorXd>(OutputModel(i).V.data(), OutputModel(i).V.size());
 		for (auto const &objective : Outputs[i].totalObjective->objectiveList) {
-			Eigen::VectorXd xx = Eigen::VectorXd::Random(InputModel().V.size()) * 10;
-			//Eigen::VectorXd xx = Eigen::Map<const Eigen::VectorXd>(OutputModel(i).V.data(), OutputModel(i).V.size());
 			objective->checkHessian(xx);
 		}
 	}
@@ -1220,9 +1220,12 @@ void basic_app::initializeSolver(const int index)
 		return;
 
 	// initialize the energy
-	auto bendingEdge = std::make_unique<BendingEdge>();
-	bendingEdge->init_mesh(V, F);
-	bendingEdge->init();
+	auto QbendingEdge = std::make_unique<BendingEdge>(Utils::Quadratic);
+	QbendingEdge->init_mesh(V, F);
+	QbendingEdge->init();
+	auto EbendingEdge = std::make_unique<BendingEdge>(Utils::Exponential);
+	EbendingEdge->init_mesh(V, F);
+	EbendingEdge->init();
 	auto SymmDirich = std::make_unique<MembraneConstraints>(Utils::SYMMETRIC_DIRICHLET);
 	SymmDirich->init_mesh(V, F);
 	SymmDirich->init();
@@ -1239,7 +1242,8 @@ void basic_app::initializeSolver(const int index)
 
 	Outputs[index].totalObjective->objectiveList.clear();
 	Outputs[index].totalObjective->init_mesh(V, F);
-	Outputs[index].totalObjective->objectiveList.push_back(move(bendingEdge));
+	Outputs[index].totalObjective->objectiveList.push_back(move(QbendingEdge));
+	Outputs[index].totalObjective->objectiveList.push_back(move(EbendingEdge));
 	Outputs[index].totalObjective->objectiveList.push_back(move(SymmDirich));
 	Outputs[index].totalObjective->objectiveList.push_back(move(STVK));
 	Outputs[index].totalObjective->objectiveList.push_back(move(constraintsPositional));

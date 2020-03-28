@@ -16,6 +16,11 @@ public:
 		SYMMETRIC_DIRICHLET
 	};
 
+	enum FunctionType {
+		Quadratic = 0,
+		Exponential
+	};
+
 	static enum LineSearch {
 		GradientNorm = 0,
 		FunctionValue = 1,

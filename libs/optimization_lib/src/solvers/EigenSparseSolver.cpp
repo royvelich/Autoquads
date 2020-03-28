@@ -23,7 +23,7 @@ void EigenSparseSolver<vectorTypeI, vectorTypeS>::set_pattern(const vectorTypeI 
 template <typename vectorTypeI, typename vectorTypeS>
 void EigenSparseSolver<vectorTypeI, vectorTypeS>::analyze_pattern()
 {
-	solver.analyzePattern(full_A/*UpperTriangular_A*/);
+	solver.analyzePattern(full_A);
 	//assert(solver.info() == Eigen::Success && "analyzePattern failed!");
 }
 

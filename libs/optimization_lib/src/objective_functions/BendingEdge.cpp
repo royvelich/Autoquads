@@ -1,9 +1,16 @@
 ﻿#include "objective_functions/BendingEdge.h"
+#include <unsupported/Eigen/MatrixFunctions>
 
 #define SGN(x) (((x)<0)?(-1):(1))
 
-BendingEdge::BendingEdge() {
-	name = "Bending Edge energy";
+BendingEdge::BendingEdge(Utils::FunctionType type) {
+	functionType = type;
+	if (functionType == Utils::Quadratic)
+		name = "Quadratic Bending Edge";
+	else if (functionType == Utils::Exponential)
+		name = "Exponential Bending Edge";
+	else
+		name = "fsdfsd";
 	w = 1;
 	std::cout << name << " constructor" << std::endl;
 }
@@ -17,8 +24,8 @@ void BendingEdge::init()
 	if (restShapeV.size() == 0 || restShapeF.size() == 0)
 		throw name + " must define members V,F before init()!";
 
+	functionType = Utils::Quadratic;
 	calculateHinges();
-
 	restAngle.resize(num_hinges);
 	restEdgeLength.resize(num_hinges);
 	restConst.resize(num_hinges);
@@ -170,10 +177,10 @@ void BendingEdge::calculateHinges() {
 
 void BendingEdge::setRestShapeFromCurrentConfiguration() {
 	for (int hi = 0; hi < num_hinges; hi++) {
-		Eigen::Vector3d x0 = restShapeV.row(x0_index(hi));// = n[0]->getWorldPosition();
-		Eigen::Vector3d x1 = restShapeV.row(x1_index(hi));// = n[1]->getWorldPosition();
-		Eigen::Vector3d x2 = restShapeV.row(x2_index(hi));// = n[2]->getWorldPosition();
-		Eigen::Vector3d x3 = restShapeV.row(x3_index(hi));// = n[3]->getWorldPosition();
+		Eigen::Vector3d x0 = restShapeV.row(x0_index(hi));
+		Eigen::Vector3d x1 = restShapeV.row(x1_index(hi));
+		Eigen::Vector3d x2 = restShapeV.row(x2_index(hi));
+		Eigen::Vector3d x3 = restShapeV.row(x3_index(hi));
 		Eigen::Vector3d e0 = x1 - x0;
 		Eigen::Vector3d n1 = e0.cross(x2 - x0);
 		Eigen::Vector3d n2 = (x3 - x0).cross(e0);
@@ -200,14 +207,32 @@ void BendingEdge::getAngle() {
 	}
 }
 
+Eigen::VectorXd BendingEdge::AngleFunctionvalue(Eigen::VectorXd angleDifference) {
+	if(functionType == Utils::Quadratic)
+		return angleDifference.cwiseAbs2();
+	else if (functionType == Utils::Exponential)
+		return angleDifference.exp();
+}
+
+Eigen::VectorXd BendingEdge::dF_d0(Eigen::VectorXd angleDifference) {
+	if (functionType == Utils::Quadratic)
+		return 2 * angleDifference;
+	else if (functionType == Utils::Exponential)
+		return angleDifference.exp();
+}
+
+Eigen::VectorXd BendingEdge::d2F_d0d0(Eigen::VectorXd angleDifference) {
+	if (functionType == Utils::Quadratic)
+		return Eigen::VectorXd::Constant(angleDifference.rows(),2);
+	else if (functionType == Utils::Exponential)
+		return angleDifference.exp();
+}
+
 double BendingEdge::value(const bool update)
 {
 	Eigen::VectorXd d_angle = angle - restAngle;
-	/* alternative energy:
-	k*3*restEdgeLength*restEdgeLength/restArea  * (phi(angle) - phi(restAngle))^2
-	phi(alpha) = 2 * tan(alpha/2)	and	psi(alpha) = tan(alpha/pow(2,n))	s.t. phi = 2^n psi
-	*/
-	Eigen::VectorXd Energy = k * d_angle.cwiseProduct(d_angle).cwiseProduct(restConst);
+	Eigen::VectorXd f = AngleFunctionvalue(d_angle);
+	Eigen::VectorXd Energy = k * f.cwiseProduct(restConst);
 
 	double value = Energy.sum();
 	
@@ -224,186 +249,175 @@ void BendingEdge::gradient(Eigen::VectorXd& g, const bool update)
 	g.setZero();
 
 	Eigen::VectorXd d_angle = angle - restAngle;
-	// constant factor depending only on rest shape
-	Eigen::VectorXd K = 2 * k * restConst;
-	// combine with factor depending on current angle
-	Eigen::VectorXd zeta = K.cwiseProduct(d_angle);// zeta changes when using alternative energy, see Hessian
+	Eigen::VectorXd dE_df = k * restConst;
+	Eigen::VectorXd df_d0 = dF_d0(d_angle);
 
 	for (int hi = 0; hi < num_hinges; hi++) {
-		Eigen::Vector3d e0 = x1.row(hi) - x0.row(hi);
-		Eigen::Vector3d e1 = x2.row(hi) - x0.row(hi);
-		Eigen::Vector3d e2 = x3.row(hi) - x0.row(hi);
-		Eigen::Vector3d e3 = x2.row(hi) - x1.row(hi);
-		Eigen::Vector3d e4 = x3.row(hi) - x1.row(hi);
-		Eigen::Vector3d n1 = e0.cross(e1);
-		Eigen::Vector3d n2 = e2.cross(e0);
-		double l_e0 = e0.norm(); e0 /= l_e0;
-		double l_e1 = e1.norm(); e1 /= l_e1;
-		double l_e2 = e2.norm(); e2 /= l_e2;
-		double l_e3 = e3.norm(); e3 /= l_e3;
-		double l_e4 = e4.norm(); e4 /= l_e4;
-		double l_n1 = n1.norm(); n1 /= l_n1;
-		double l_n2 = n2.norm(); n2 /= l_n2;
-		double angle_1 = acos(e0.dot(e1));
-		double angle_2 = acos(e2.dot(e0));
-		double angle_3 = acos(e3.dot(-e0));
-		double angle_4 = acos((-e0).dot(e4));
-		double h_1 = l_n1 / l_e1;
-		double h_2 = l_n2 / l_e2;
-		double h_3 = l_n1 / l_e3;
-		double h_4 = l_n2 / l_e4;
-		double h_01 = l_n1 / l_e0;
-		double h_02 = l_n2 / l_e0;
+		Eigen::Matrix<double, 4, 3> dE_dx = dE_df(hi) * df_d0(hi) * d0_dx(hi);
 
-
-		Eigen::Vector3d component;
-		// dE/dx0
-		component = (n1*cos(angle_3) / h_3 + n2 * cos(angle_4) / h_4)*zeta(hi);
-		for (int i = 0; i < 3; ++i)
-			g[x0_index(hi) + (i*restShapeV.rows())] += component[i];
-
-		// dE/dx1
-		component = (n1*cos(angle_1) / h_1 + n2 * cos(angle_2) / h_2)*zeta(hi);
-		for (int i = 0; i < 3; ++i)
-			g[x1_index(hi) + (i*restShapeV.rows())] += component[i];
-
-		// dE/dx2
-		component = n1 * (-zeta(hi)) / h_01;
-		for (int i = 0; i < 3; ++i)
-			g[x2_index(hi) + (i*restShapeV.rows())] += component[i];
-
-		// dE/dx3
-		component = n2 * (-zeta(hi)) / h_02;
-		for (int i = 0; i < 3; ++i)
-			g[x3_index(hi) + (i*restShapeV.rows())] += component[i];
+		for(int i=0;i<4;i++)
+			for (int xyz = 0; xyz < 3; ++xyz)
+				g[x_index(i,hi) + (xyz*restShapeV.rows())] += dE_dx(i, xyz);
 	}
 
 	if (update)
 		gradient_norm = g.norm();
 }
 
+Eigen::Matrix< Eigen::Matrix3d, 4, 4> BendingEdge::d20_dxdx(int hi) {
+	//start copied code from gradient
+	Eigen::Vector3d e0 = x1.row(hi) - x0.row(hi);
+	Eigen::Vector3d e1 = x2.row(hi) - x0.row(hi);
+	Eigen::Vector3d e2 = x3.row(hi) - x0.row(hi);
+	Eigen::Vector3d e3 = x2.row(hi) - x1.row(hi);
+	Eigen::Vector3d e4 = x3.row(hi) - x1.row(hi);
+	Eigen::Vector3d n1 = e0.cross(e1);
+	Eigen::Vector3d n2 = e2.cross(e0);
+	double l_e0 = e0.norm(); e0 /= l_e0;
+	double l_e1 = e1.norm(); e1 /= l_e1;
+	double l_e2 = e2.norm(); e2 /= l_e2;
+	double l_e3 = e3.norm(); e3 /= l_e3;
+	double l_e4 = e4.norm(); e4 /= l_e4;
+	double l_n1 = n1.norm(); n1 /= l_n1;
+	double l_n2 = n2.norm(); n2 /= l_n2;
+	double angle_1 = acos(e0.dot(e1));
+	double angle_2 = acos(e2.dot(e0));
+	double angle_3 = acos(e3.dot(-e0));
+	double angle_4 = acos((-e0).dot(e4));
+	double h_1 = l_n1 / l_e1;
+	double h_2 = l_n2 / l_e2;
+	double h_3 = l_n1 / l_e3;
+	double h_4 = l_n2 / l_e4;
+	double h_01 = l_n1 / l_e0;
+	double h_02 = l_n2 / l_e0;
+	//end copied code from gradient
+	
+	// vectors m
+	Eigen::Vector3d m1 = -e1.cross(n1);
+	Eigen::Vector3d m2 = e2.cross(n2);
+	Eigen::Vector3d m3 = e3.cross(n1);
+	Eigen::Vector3d m4 = -e4.cross(n2);
+	Eigen::Vector3d m01 = e0.cross(n1);
+	Eigen::Vector3d m02 = -e0.cross(n2);
+
+	//Hessian of angle
+	Eigen::Matrix< Eigen::Matrix3d, 4, 4> H_angle;
+	//Eigen is making v1 * v2.T harder than it should be
+	Eigen::RowVector3d n1_t = n1.transpose();
+	Eigen::RowVector3d n2_t = n2.transpose();
+	Eigen::RowVector3d m1_t = m1.transpose();
+	Eigen::RowVector3d m2_t = m2.transpose();
+	Eigen::RowVector3d m3_t = m3.transpose();
+	Eigen::RowVector3d m4_t = m4.transpose();
+	Eigen::RowVector3d m01_t = m01.transpose();
+	Eigen::RowVector3d m02_t = m02.transpose();
+	Eigen::Matrix3d B1 = n1 * m01_t / (l_e0*l_e0);
+	Eigen::Matrix3d B2 = n2 * m02_t / (l_e0*l_e0);
+
+	H_angle(0, 0) = cos(angle_3) / (h_3*h_3) * (m3 * n1_t + n1 * m3_t) - B1
+		+ cos(angle_4) / (h_4*h_4) * (m4 * n2_t + n2 * m4_t) - B2;
+	H_angle(0, 1) = cos(angle_3) / (h_1*h_3) * m1*n1_t + cos(angle_1) / (h_1*h_3)*n1*m3_t + B1
+		+ cos(angle_4) / (h_2*h_4)*m2*n2_t + cos(angle_2) / (h_2*h_4)*n2*m4_t + B2;
+	H_angle(0, 2) = cos(angle_3) / (h_3*h_01)*m01*n1_t - n1 * m3_t / (h_01*h_3);
+	H_angle(0, 3) = cos(angle_4) / (h_4*h_02)*m02*n2_t - n2 * m4_t / (h_02*h_4);
+	H_angle(1, 1) = cos(angle_1) / (h_1*h_1)*(m1*n1_t + n1 * m1_t) - B1
+		+ cos(angle_2) / (h_2*h_2)*(m2*n2_t + n2 * m2_t) - B2;
+	H_angle(1, 2) = cos(angle_1) / (h_1*h_01)*m01*n1_t - n1 * m1_t / (h_01*h_1);
+	H_angle(1, 3) = cos(angle_2) / (h_2*h_02)*m02*n2_t - n2 * m2_t / (h_02*h_2);
+	H_angle(2, 2) = -(n1*m01_t + m01 * n1_t) / (h_01*h_01);
+	H_angle(2, 3).setZero();
+	H_angle(3, 3) = -(n2*m02_t + m02 * n2_t) / (h_02*h_02);
+	for (int i = 1; i < 4; ++i)
+		for (int j = i - 1; j >= 0; --j)
+			H_angle(i, j) = H_angle(j, i).transpose();
+
+	return H_angle;
+}
+
+Eigen::Matrix<double, 4, 3> BendingEdge::d0_dx(int hi) {
+	//start copied code from gradient
+	Eigen::Vector3d e0 = x1.row(hi) - x0.row(hi);
+	Eigen::Vector3d e1 = x2.row(hi) - x0.row(hi);
+	Eigen::Vector3d e2 = x3.row(hi) - x0.row(hi);
+	Eigen::Vector3d e3 = x2.row(hi) - x1.row(hi);
+	Eigen::Vector3d e4 = x3.row(hi) - x1.row(hi);
+	Eigen::Vector3d n1 = e0.cross(e1);
+	Eigen::Vector3d n2 = e2.cross(e0);
+	double l_e0 = e0.norm(); e0 /= l_e0;
+	double l_e1 = e1.norm(); e1 /= l_e1;
+	double l_e2 = e2.norm(); e2 /= l_e2;
+	double l_e3 = e3.norm(); e3 /= l_e3;
+	double l_e4 = e4.norm(); e4 /= l_e4;
+	double l_n1 = n1.norm(); n1 /= l_n1;
+	double l_n2 = n2.norm(); n2 /= l_n2;
+	double angle_1 = acos(e0.dot(e1));
+	double angle_2 = acos(e2.dot(e0));
+	double angle_3 = acos(e3.dot(-e0));
+	double angle_4 = acos((-e0).dot(e4));
+	double h_1 = l_n1 / l_e1;
+	double h_2 = l_n2 / l_e2;
+	double h_3 = l_n1 / l_e3;
+	double h_4 = l_n2 / l_e4;
+	double h_01 = l_n1 / l_e0;
+	double h_02 = l_n2 / l_e0;
+	//end copied code from gradient
+
+	//Gradient of angle
+	Eigen::Matrix<double, 4, 3> grad_angle;
+	grad_angle.row(0) = n1 * cos(angle_3) / h_3 + n2 * cos(angle_4) / h_4;
+	grad_angle.row(1) = n1 * cos(angle_1) / h_1 + n2 * cos(angle_2) / h_2;
+	grad_angle.row(2) = -n1 / h_01;
+	grad_angle.row(3) = -n2 / h_02;
+
+	return grad_angle;
+}
+
+int BendingEdge::x_index(int i,int hi) {
+	if (i == 0)
+		return x0_index(hi);
+	else if (i == 1)
+		return x1_index(hi);
+	else if (i == 2)
+		return x2_index(hi);
+	else if (i == 3)
+		return x3_index(hi);
+	else
+		assert("Error!");
+}
+
 void BendingEdge::hessian() {
 	// constant factors
 	int index = 0;
 	Eigen::VectorXd d_angle = angle - restAngle;
-	Eigen::VectorXd K = 2 * k *restConst;
-	Eigen::VectorXd zeta = K.cwiseProduct(d_angle);// for alternative enrgy: zeta = K*(phi-rest_phi)*(1+psi*psi)
-	Eigen::VectorXd xi = K;// for alternative enrgy: xi = K*(1+psi*psi)*(2*(psi-rest_psi)*psi + (1+psi*psi))
+	Eigen::VectorXd dE_df = k * restConst;
+	Eigen::VectorXd df_d0 = dF_d0(d_angle);
+	Eigen::VectorXd d2f_d0d0 = d2F_d0d0(d_angle);
 
 	for (int hi = 0; hi < num_hinges; hi++) {
-		//start copied code from gradient
-		Eigen::Vector3d e0 = x1.row(hi) - x0.row(hi);
-		Eigen::Vector3d e1 = x2.row(hi) - x0.row(hi);
-		Eigen::Vector3d e2 = x3.row(hi) - x0.row(hi);
-		Eigen::Vector3d e3 = x2.row(hi) - x1.row(hi);
-		Eigen::Vector3d e4 = x3.row(hi) - x1.row(hi);
-		Eigen::Vector3d n1 = e0.cross(e1);
-		Eigen::Vector3d n2 = e2.cross(e0);
-		double l_e0 = e0.norm(); e0 /= l_e0;
-		double l_e1 = e1.norm(); e1 /= l_e1;
-		double l_e2 = e2.norm(); e2 /= l_e2;
-		double l_e3 = e3.norm(); e3 /= l_e3;
-		double l_e4 = e4.norm(); e4 /= l_e4;
-		double l_n1 = n1.norm(); n1 /= l_n1;
-		double l_n2 = n2.norm(); n2 /= l_n2;
-		double angle_1 = acos(e0.dot(e1));
-		double angle_2 = acos(e2.dot(e0));
-		double angle_3 = acos(e3.dot(-e0));
-		double angle_4 = acos((-e0).dot(e4));
-		double h_1 = l_n1 / l_e1;
-		double h_2 = l_n2 / l_e2;
-		double h_3 = l_n1 / l_e3;
-		double h_4 = l_n2 / l_e4;
-		double h_01 = l_n1 / l_e0;
-		double h_02 = l_n2 / l_e0;
-		//end copied code from gradient
-
-		//Gradient of angle
-		Eigen::Vector3d grad_angle[4];
-		grad_angle[0] = n1 * cos(angle_3) / h_3 + n2 * cos(angle_4) / h_4;
-		grad_angle[1] = n1 * cos(angle_1) / h_1 + n2 * cos(angle_2) / h_2;
-		grad_angle[2] = -n1 / h_01;
-		grad_angle[3] = -n2 / h_02;
-
-		// vectors m
-		Eigen::Vector3d m1 = -e1.cross(n1);
-		Eigen::Vector3d m2 = e2.cross(n2);
-		Eigen::Vector3d m3 = e3.cross(n1);
-		Eigen::Vector3d m4 = -e4.cross(n2);
-		Eigen::Vector3d m01 = e0.cross(n1);
-		Eigen::Vector3d m02 = -e0.cross(n2);
-
-		//Hessian of angle
-		Eigen::Matrix3d H_angle[4][4];
-		//Eigen is making v1 * v2.T harder than it should be
-		Eigen::RowVector3d n1_t = n1.transpose();
-		Eigen::RowVector3d n2_t = n2.transpose();
-		Eigen::RowVector3d m1_t = m1.transpose();
-		Eigen::RowVector3d m2_t = m2.transpose();
-		Eigen::RowVector3d m3_t = m3.transpose();
-		Eigen::RowVector3d m4_t = m4.transpose();
-		Eigen::RowVector3d m01_t = m01.transpose();
-		Eigen::RowVector3d m02_t = m02.transpose();
-		Eigen::Matrix3d B1 = n1 * m01_t / (l_e0*l_e0);
-		Eigen::Matrix3d B2 = n2 * m02_t / (l_e0*l_e0);
-
-		H_angle[0][0] = cos(angle_3) / (h_3*h_3) * (m3 * n1_t + n1 * m3_t) - B1
-			+ cos(angle_4) / (h_4*h_4) * (m4 * n2_t + n2 * m4_t) - B2;
-		H_angle[0][1] = cos(angle_3) / (h_1*h_3) * m1*n1_t + cos(angle_1) / (h_1*h_3)*n1*m3_t + B1
-			+ cos(angle_4) / (h_2*h_4)*m2*n2_t + cos(angle_2) / (h_2*h_4)*n2*m4_t + B2;
-		H_angle[0][2] = cos(angle_3) / (h_3*h_01)*m01*n1_t - n1 * m3_t / (h_01*h_3);
-		H_angle[0][3] = cos(angle_4) / (h_4*h_02)*m02*n2_t - n2 * m4_t / (h_02*h_4);
-		H_angle[1][1] = cos(angle_1) / (h_1*h_1)*(m1*n1_t + n1 * m1_t) - B1
-			+ cos(angle_2) / (h_2*h_2)*(m2*n2_t + n2 * m2_t) - B2;
-		H_angle[1][2] = cos(angle_1) / (h_1*h_01)*m01*n1_t - n1 * m1_t / (h_01*h_1);
-		H_angle[1][3] = cos(angle_2) / (h_2*h_02)*m02*n2_t - n2 * m2_t / (h_02*h_2);
-		H_angle[2][2] = -(n1*m01_t + m01 * n1_t) / (h_01*h_01);
-		H_angle[2][3].setZero();
-		H_angle[3][3] = -(n2*m02_t + m02 * n2_t) / (h_02*h_02);
-		for (int i = 1; i < 4; ++i)
-			for (int j = i - 1; j >= 0; --j)
-				H_angle[i][j] = H_angle[j][i].transpose();
-
-		//H(E) =  zeta * H(angle) + xi * grad(angle).transpose * grad(angle)
-		Eigen::RowVector3d grad_angle_t[4];
-		for (int i = 0; i < 4; ++i) grad_angle_t[i] = grad_angle[i].transpose();
+		Eigen::Matrix< Eigen::Matrix3d, 4, 4> H_angle = d20_dxdx(hi);
+		Eigen::Matrix<double, 4, 3> grad_angle = d0_dx(hi);
+		//dE/dx =	dE/dF * dF/d0 * d20/dxdx + 
+		//			dE/dF * d2F/d0d0 * d0/dx * (d0/dx)^T
 		Eigen::Matrix3d H[4][4];
 		for (int i = 0; i < 4; ++i)
 			for (int j = 0; j < 4; ++j)
-				H[i][j] = zeta(hi) * H_angle[i][j] + xi(hi) * grad_angle[i] * grad_angle_t[j];
+				H[i][j] = 
+				dE_df(hi) * df_d0(hi) * H_angle(i,j) + 
+				dE_df(hi) * d2f_d0d0(hi) * grad_angle.row(i).transpose() * grad_angle.row(j);
 
 		//Finally, convert to triplets
 		for (int i = 0; i < 4; ++i)
 			for (int j = 0; j < 4; ++j)
-				for (int ii = 0; ii < 3; ++ii) {
-					int global_j;
-					if (i == 0)
-						global_j = x0_index(hi) + (ii*restShapeV.rows());
-					else if (i == 1)
-						global_j = x1_index(hi) + (ii*restShapeV.rows());
-					else if (i == 2)
-						global_j = x2_index(hi) + (ii*restShapeV.rows());
-					else if (i == 3)
-						global_j = x3_index(hi) + (ii*restShapeV.rows());
-
+				for (int ii = 0; ii < 3; ++ii)
 					for (int jj = 0; jj < 3; ++jj) {
-						int global_i;
-
-						if (j == 0)
-							global_i = x0_index(hi) + (jj*restShapeV.rows());
-						else if (j == 1)
-							global_i = x1_index(hi) + (jj*restShapeV.rows());
-						else if (j == 2)
-							global_i = x2_index(hi) + (jj*restShapeV.rows());
-						else if (j == 3)
-							global_i = x3_index(hi) + (jj*restShapeV.rows());
+						int global_j = x_index(i, hi) + (ii*restShapeV.rows());
+						int global_i = x_index(j, hi) + (jj*restShapeV.rows());
 
 						if (global_i <= global_j) {
 							//hesEntries.push_back(Eigen::Triplet<double>(global_i, global_j, H[i][j](ii, jj)));
 							SS[index++] = H[i][j](ii, jj);
 						}	
 					}
-				}
 	}
 }
 
@@ -416,35 +430,16 @@ void BendingEdge::init_hessian()
 		//Finally, convert to triplets
 		for (int i = 0; i < 4; ++i)
 			for (int j = 0; j < 4; ++j)
-				for (int ii = 0; ii < 3; ++ii) {
-					int global_j;
-					if (i == 0)
-						global_j = x0_index(hi) + (ii*restShapeV.rows());
-					else if (i == 1)
-						global_j = x1_index(hi) + (ii*restShapeV.rows());
-					else if (i == 2)
-						global_j = x2_index(hi) + (ii*restShapeV.rows());
-					else if (i == 3)
-						global_j = x3_index(hi) + (ii*restShapeV.rows());
-
+				for (int ii = 0; ii < 3; ++ii)
 					for (int jj = 0; jj < 3; ++jj) {
-						int global_i;
-
-						if (j == 0)
-							global_i = x0_index(hi) + (jj*restShapeV.rows());
-						else if (j == 1)
-							global_i = x1_index(hi) + (jj*restShapeV.rows());
-						else if (j == 2)
-							global_i = x2_index(hi) + (jj*restShapeV.rows());
-						else if (j == 3)
-							global_i = x3_index(hi) + (jj*restShapeV.rows());
+						int global_j = x_index(i, hi) + (ii*restShapeV.rows());
+						int global_i = x_index(j, hi) + (jj*restShapeV.rows());
 
 						if (global_i <= global_j) {
 							II.push_back(global_i);
 							JJ.push_back(global_j);
 						}
 					}
-				}
 	}
 
 	SS = std::vector<double>(II.size(), 0.);
