@@ -58,15 +58,16 @@ void TotalObjective::hessian()
 	
 	for (auto const &objective : objectiveList)
 	{
-        //if (objective->w != 0) //Just don't update the hessian, but we still must enter those elements into the big hessian to have the same sparsity pattern
-		objective->hessian();
-		std::vector<double> SSi; SSi.resize(objective->SS.size());
-        for (int i = 0; i < objective->SS.size(); i++)
-            SSi[i] = objective->w * objective->SS[i];
+		if (objective->w != 0) {
+			objective->hessian();
+			std::vector<double> SSi; SSi.resize(objective->SS.size());
+			for (int i = 0; i < objective->SS.size(); i++)
+				SSi[i] = objective->w * objective->SS[i];
 
-		SS.insert(SS.end(), SSi.begin(), SSi.end());
-		II.insert(II.end(), objective->II.begin(), objective->II.end());
-		JJ.insert(JJ.end(), objective->JJ.begin(), objective->JJ.end());
+			SS.insert(SS.end(), SSi.begin(), SSi.end());
+			II.insert(II.end(), objective->II.begin(), objective->II.end());
+			JJ.insert(JJ.end(), objective->JJ.begin(), objective->JJ.end());
+		}
 	}
 
 	// shift the diagonal of the hessian
