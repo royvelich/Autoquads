@@ -9,8 +9,6 @@ BendingEdge::BendingEdge(Utils::FunctionType type) {
 		name = "Quadratic Bending Edge";
 	else if (functionType == Utils::Exponential)
 		name = "Exponential Bending Edge";
-	else
-		name = "fsdfsd";
 	w = 1;
 	std::cout << name << " constructor" << std::endl;
 }
@@ -24,7 +22,6 @@ void BendingEdge::init()
 	if (restShapeV.size() == 0 || restShapeF.size() == 0)
 		throw name + " must define members V,F before init()!";
 
-	functionType = Utils::Quadratic;
 	calculateHinges();
 	restAngle.resize(num_hinges);
 	restEdgeLength.resize(num_hinges);
@@ -207,25 +204,40 @@ void BendingEdge::getAngle() {
 	}
 }
 
-Eigen::VectorXd BendingEdge::AngleFunctionvalue(Eigen::VectorXd angleDifference) {
+Eigen::VectorXd BendingEdge::AngleFunctionvalue(Eigen::VectorXd x) {
 	if(functionType == Utils::Quadratic)
-		return angleDifference.cwiseAbs2();
-	else if (functionType == Utils::Exponential)
-		return angleDifference.exp();
+		return x.cwiseAbs2();
+	else if (functionType == Utils::Exponential) {
+		Eigen::VectorXd res(x.rows());
+		for (int i = 0; i < x.rows(); i++) {
+			res(i) = std::exp(x(i)*x(i));
+		}
+		return res;
+	}
 }
 
-Eigen::VectorXd BendingEdge::dF_d0(Eigen::VectorXd angleDifference) {
+Eigen::VectorXd BendingEdge::dF_d0(Eigen::VectorXd x) {
 	if (functionType == Utils::Quadratic)
-		return 2 * angleDifference;
-	else if (functionType == Utils::Exponential)
-		return angleDifference.exp();
+		return 2 * x;
+	else if (functionType == Utils::Exponential) {
+		Eigen::VectorXd res(x.rows());
+		for (int i = 0; i < x.rows(); i++) {
+			res(i) = 2 * x(i) * std::exp(x(i)*x(i));
+		}
+		return res;
+	}
 }
 
-Eigen::VectorXd BendingEdge::d2F_d0d0(Eigen::VectorXd angleDifference) {
+Eigen::VectorXd BendingEdge::d2F_d0d0(Eigen::VectorXd x) {
 	if (functionType == Utils::Quadratic)
-		return Eigen::VectorXd::Constant(angleDifference.rows(),2);
-	else if (functionType == Utils::Exponential)
-		return angleDifference.exp();
+		return Eigen::VectorXd::Constant(x.rows(),2);
+	else if (functionType == Utils::Exponential) {
+		Eigen::VectorXd res(x.rows());
+		for (int i = 0; i < x.rows(); i++) {
+			res(i) = (4 * x(i)*x(i) + 2) * std::exp(x(i)*x(i));
+		}
+		return res;
+	}
 }
 
 double BendingEdge::value(const bool update)
