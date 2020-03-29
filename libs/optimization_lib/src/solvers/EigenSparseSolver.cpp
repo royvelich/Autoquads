@@ -32,6 +32,13 @@ void EigenSparseSolver<vectorTypeI, vectorTypeS>::factorize(const vectorTypeI &I
 {
 	perpareMatrix(II,JJ,SS);
 	solver.factorize(full_A);
+	// Launch MATLAB
+	igl::matlab::mlinit(&engine);
+	igl::matlab::mleval(&engine, "desktop");
+
+	// Send matrix to matlab
+	igl::matlab::mlsetmatrix(&engine, "a", full_A);
+	
 	assert(solver.info() == Eigen::Success && "factorization failed!");
 }
 
