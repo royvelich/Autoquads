@@ -44,21 +44,26 @@ public:
 		return A;
 	}
 
+	
+	static void LocalBasis(const Eigen::MatrixX3d &V, const Eigen::MatrixX3i &F, Eigen::MatrixX3d &B1, Eigen::MatrixX3d &B2) {
+		Eigen::MatrixX3d B3;
+		igl::local_basis(V, F, B1, B2, B3);
+	}
+	
 	static void computeSurfaceGradientPerFace(const Eigen::MatrixX3d &V, const Eigen::MatrixX3i &F, Eigen::MatrixX3d &D1, Eigen::MatrixX3d &D2)
 	{
-		using namespace Eigen;
-		MatrixX3d F1, F2, F3;
+		Eigen::MatrixX3d F1, F2, F3;
 		igl::local_basis(V, F, F1, F2, F3);
 		const int Fn = F.rows();  const int vn = V.rows();
 
-		MatrixXd Dx(Fn, 3), Dy(Fn, 3), Dz(Fn, 3);
-		MatrixXd fN; igl::per_face_normals(V, F, fN);
-		VectorXd Ar; igl::doublearea(V, F, Ar);
-		PermutationMatrix<3> perm;
+		Eigen::MatrixX3d Dx(Fn,3), Dy(Fn, 3), Dz(Fn, 3);
+		Eigen::MatrixX3d fN; igl::per_face_normals(V, F, fN);
+		Eigen::VectorXd Ar; igl::doublearea(V, F, Ar);
+		Eigen::PermutationMatrix<3> perm;
 
-        Vector3i Pi;
+		Eigen::Vector3i Pi;
 		Pi << 1, 2, 0;
-		PermutationMatrix<3> P = Eigen::PermutationMatrix<3>(Pi);
+		Eigen::PermutationMatrix<3> P = Eigen::PermutationMatrix<3>(Pi);
 
 		for (int i = 0; i < Fn; i++) {
 			// renaming indices of vertices of triangles for convenience
@@ -67,20 +72,20 @@ public:
 			int i3 = F(i, 2);
 
 			// #F x 3 matrices of triangle edge vectors, named after opposite vertices
-			Matrix3d e;
+			Eigen::Matrix3d e;
 			e.col(0) = V.row(i2) - V.row(i1);
 			e.col(1) = V.row(i3) - V.row(i2);
 			e.col(2) = V.row(i1) - V.row(i3);;
 
-			Vector3d Fni = fN.row(i);
+			Eigen::Vector3d Fni = fN.row(i);
 			double Ari = Ar(i);
 
 			//grad3_3f(:,[3*i,3*i-2,3*i-1])=[0,-Fni(3), Fni(2);Fni(3),0,-Fni(1);-Fni(2),Fni(1),0]*e/(2*Ari);
-			Matrix3d n_M;
+			Eigen::Matrix3d n_M;
 			n_M << 0, -Fni(2), Fni(1), Fni(2), 0, -Fni(0), -Fni(1), Fni(0), 0;
-			VectorXi R(3); R << 0, 1, 2;
-			VectorXi C(3); C << 3 * i + 2, 3 * i, 3 * i + 1;
-			Matrix3d res = ((1. / Ari)*(n_M*e))*P;
+			Eigen::VectorXi R(3); R << 0, 1, 2;
+			Eigen::VectorXi C(3); C << 3 * i + 2, 3 * i, 3 * i + 1;
+			Eigen::Matrix3d res = ((1. / Ari)*(n_M*e))*P;
 
 			Dx.row(i) = res.row(0);
 			Dy.row(i) = res.row(1);

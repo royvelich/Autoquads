@@ -29,6 +29,19 @@ void MembraneConstraints::init()
 }
 
 void MembraneConstraints::setRestShapeFromCurrentConfiguration() {
+
+	a.resize(restShapeF.rows());
+	b.resize(restShapeF.rows());
+	c.resize(restShapeF.rows());
+	d.resize(restShapeF.rows());
+	detJ.resize(restShapeF.rows());
+	
+	Eigen::MatrixX3d D1cols, D2cols;
+	Utils::computeSurfaceGradientPerFace(restShapeV, restShapeF, D1cols, D2cols);
+	D1d = D1cols.transpose();
+	D2d = D2cols.transpose();
+
+	
 	//edge vectors
 	dXInv.clear();
 	for (int fi = 0; fi < restShapeF.rows(); fi++) {
@@ -50,10 +63,42 @@ void MembraneConstraints::setRestShapeFromCurrentConfiguration() {
 void MembraneConstraints::updateX(const Eigen::VectorXd& X)
 {
 	assert(X.rows() == (3 * restShapeV.rows()));
-	CurrV = Eigen::Map<const Eigen::MatrixXd>(X.data(), X.rows() / 3, 3);
+	CurrV = Eigen::Map<const Eigen::MatrixX3d>(X.data(), X.rows() / 3, 3);
 	F.clear();
 	strain.clear();
+
+	Eigen::MatrixX3d B1,B2;
+	Utils::LocalBasis(CurrV, restShapeF, B1, B2);
+	//B2 *= -1;
 	for (int fi = 0; fi < restShapeF.rows(); fi++) {
+		////////////////////////////////////////////////
+		Eigen::Vector3d Xi, Yi;
+		Xi <<
+			CurrV.row(restShapeF(fi, 0)) * B1.row(fi).transpose(),
+			CurrV.row(restShapeF(fi, 1)) * B1.row(fi).transpose(),
+			CurrV.row(restShapeF(fi, 2)) * B1.row(fi).transpose();
+		Yi << 
+			CurrV.row(restShapeF(fi, 0)) * B2.row(fi).transpose(),
+			CurrV.row(restShapeF(fi, 1)) * B2.row(fi).transpose(),
+			CurrV.row(restShapeF(fi, 2)) * B2.row(fi).transpose();
+		
+		Eigen::Vector3d Dx = D1d.col(fi);
+		Eigen::Vector3d Dy = D2d.col(fi);
+		//prepare jacobian		
+		a(fi) = Dx.transpose() * Xi;
+		b(fi) = Dx.transpose() * Yi;
+		c(fi) = Dy.transpose() * Xi;
+		d(fi) = Dy.transpose() * Yi;
+		detJ(fi) = a(fi) * d(fi) - b(fi) * c(fi);
+
+		std::cout << "a = " << a(fi) << std::endl;
+		std::cout << "b = " << b(fi) << std::endl;
+		std::cout << "c = " << c(fi) << std::endl;
+		std::cout << "d = " << d(fi) << std::endl;
+		std::cout << "detJ = " << detJ(fi) << std::endl;
+		////////////////////////////////////////////////
+
+
 		//edge vectors
 		Eigen::VectorXd v1 = CurrV.row(restShapeF(fi, 1)) - CurrV.row(restShapeF(fi, 0));
 		Eigen::VectorXd v2 = CurrV.row(restShapeF(fi, 2)) - CurrV.row(restShapeF(fi, 0));
