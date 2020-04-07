@@ -41,7 +41,6 @@ void MembraneConstraints::setRestShapeFromCurrentConfiguration() {
 	D1d = D1cols.transpose();
 	D2d = D2cols.transpose();
 
-	
 	//edge vectors
 	dXInv.clear();
 	for (int fi = 0; fi < restShapeF.rows(); fi++) {
@@ -66,10 +65,8 @@ void MembraneConstraints::updateX(const Eigen::VectorXd& X)
 	CurrV = Eigen::Map<const Eigen::MatrixX3d>(X.data(), X.rows() / 3, 3);
 	F.clear();
 	strain.clear();
-
-	Eigen::MatrixX3d B1,B2;
 	Utils::LocalBasis(CurrV, restShapeF, B1, B2);
-	//B2 *= -1;
+
 	for (int fi = 0; fi < restShapeF.rows(); fi++) {
 		////////////////////////////////////////////////
 		Eigen::Vector3d Xi, Yi;
@@ -91,11 +88,11 @@ void MembraneConstraints::updateX(const Eigen::VectorXd& X)
 		d(fi) = Dy.transpose() * Yi;
 		detJ(fi) = a(fi) * d(fi) - b(fi) * c(fi);
 
-		std::cout << "a = " << a(fi) << std::endl;
-		std::cout << "b = " << b(fi) << std::endl;
-		std::cout << "c = " << c(fi) << std::endl;
-		std::cout << "d = " << d(fi) << std::endl;
-		std::cout << "detJ = " << detJ(fi) << std::endl;
+		//std::cout << "a = " << a(fi) << std::endl;
+		//std::cout << "b = " << b(fi) << std::endl;
+		//std::cout << "c = " << c(fi) << std::endl;
+		//std::cout << "d = " << d(fi) << std::endl;
+		//std::cout << "detJ = " << detJ(fi) << std::endl;
 		////////////////////////////////////////////////
 
 
@@ -117,10 +114,63 @@ void MembraneConstraints::updateX(const Eigen::VectorXd& X)
 	}
 }
 
+Eigen::Matrix<double, 1, 9> MembraneConstraints::da_dX(int fi) {
+	Eigen::Vector3d Dx = D1d.col(fi);
+	Eigen::Vector3d Dy = D2d.col(fi);
+	
+	Eigen::Matrix<double, 1, 3> V0 = CurrV.row(restShapeF(fi, 0));
+	Eigen::Matrix<double, 1, 3> V1 = CurrV.row(restShapeF(fi, 1));
+	Eigen::Matrix<double, 1, 3> V2 = CurrV.row(restShapeF(fi, 2));
+
+	Eigen::Matrix<double, 1, 9> addx, addy, addz;
+	addx << B1(fi, 0)	, 0			, 0			, B1(fi, 1)	, 0			, 0			, B1(fi, 2)	, 0			, 0;
+	addy << 0			, B1(fi, 0)	, 0			, 0			, B1(fi, 1)	, 0			, 0			, B1(fi, 2)	, 0;
+	addz << 0			, 0			, B1(fi, 0)	, 0			, 0			, B1(fi, 1)	, 0			, 0			, B1(fi, 2);
+	
+	Eigen::Matrix<double, 3, 9> XX, db1_dX = dB1_dX(fi);
+	XX <<
+		(V0 * db1_dX + addx),
+		(V1 * db1_dX + addy),
+		(V2 * db1_dX + addz);
+	
+	Eigen::Matrix<double, 1, 9> da_dX = Dx.transpose()*XX;
+	Eigen::Matrix<double, 1, 9> dc_dX = Dy.transpose()*XX;
+	return da_dX;
+}
+
+Eigen::Matrix<double, 3, 9> MembraneConstraints::dB1_dX(int fi) {
+	Eigen::Matrix<double, 3, 9> g;
+	
+	Eigen::Matrix<double, 3, 1> V0 = CurrV.row(restShapeF(fi, 0));
+	Eigen::Matrix<double, 3, 1> V1 = CurrV.row(restShapeF(fi, 1));
+	Eigen::Matrix<double, 3, 1> V2 = CurrV.row(restShapeF(fi, 2));
+	double norm_V1V0 = (V1 - V0).norm();
+		
+	// dB1.x/dx0
+	double dB1x_dx0 = ((pow(V1[0] - V0[0], 2) / norm_V1V0) - norm_V1V0) / pow(norm_V1V0, 2);
+	// dB1.y/dy0
+	double dB1y_dy0 = ((pow(V1[1] - V0[1], 2) / norm_V1V0) - norm_V1V0) / pow(norm_V1V0, 2);
+	// dB1.z/dz0
+	double dB1z_dz0 = ((pow(V1[2] - V0[2], 2) / norm_V1V0) - norm_V1V0) / pow(norm_V1V0, 2);
+	// dB1.x/dy0
+	double dB1x_dy0 = ((V1[1] - V0[1])*(V1[0] - V0[0])) / pow(norm_V1V0, 3);
+	// dB1.x/dz0
+	double dB1x_dz0 = ((V1[2] - V0[2])*(V1[0] - V0[0])) / pow(norm_V1V0, 3);
+	// dB1.y/dz0
+	double dB1y_dz0 = ((V1[2] - V0[2])*(V1[1] - V0[1])) / pow(norm_V1V0, 3);
+	g <<
+		dB1x_dx0, -dB1x_dx0, 0, dB1x_dy0, -dB1x_dy0, 0, dB1x_dz0, -dB1x_dz0, 0,
+		dB1x_dy0, -dB1x_dy0, 0, dB1y_dy0, -dB1y_dy0, 0, dB1y_dz0, -dB1y_dz0, 0,
+		dB1x_dz0, -dB1x_dz0, 0, dB1y_dz0, -dB1y_dz0, 0, dB1z_dz0, -dB1z_dz0, 0;
+	
+	return g;
+}
+
+
 double MembraneConstraints::value(const bool update) {
 	
 	Eigen::VectorXd Energy(restShapeF.rows());
-	for (int fi = 0; fi < restShapeF.rows(); fi++) {
+	/*for (int fi = 0; fi < restShapeF.rows(); fi++) {
 		if (type == Utils::STVK) {
 			Energy(fi) = shearModulus * strain[fi].squaredNorm();
 			Energy(fi) += (bulkModulus / 2) * pow(strain[fi].trace(), 2);
@@ -129,8 +179,22 @@ double MembraneConstraints::value(const bool update) {
 			Energy(fi) = 0.5 * (1 + 1/ pow(strain[fi].determinant(),2)) * strain[fi].squaredNorm();
 		}
 	}
-
 	double total_energy = restShapeArea.transpose() * Energy;
+	*/
+	
+	//Energy = a;
+	
+	double total_energy = 0;
+	for (int fi = 0; fi < restShapeF.rows(); fi++) {
+		//total_energy += B1(fi, 0) + B1(fi, 1) + B1(fi, 2);
+		//total_energy += CurrV(restShapeF(fi, 0), 0) * B1(fi, 0);
+
+		//total_energy += CurrV.row(restShapeF(fi, 0)) * B1.row(fi).transpose();
+		//total_energy += CurrV.row(restShapeF(fi, 1)) * B1.row(fi).transpose();
+		//total_energy += CurrV.row(restShapeF(fi, 2)) * B1.row(fi).transpose();
+		total_energy += a(fi);
+	}
+	
 
 	if (update) {
 		Efi = Energy;
@@ -147,7 +211,7 @@ void MembraneConstraints::gradient(Eigen::VectorXd& g, const bool update)
 	//compute the gradient of the energy using the chain rule: dE/dx = dE/dF * dF/dx. dE/dF is the first Piola-Kirchoff stress sensor, for which nice expressions exist.
 	//compute the deformation gradient
 	for (int fi = 0; fi < restShapeF.rows(); fi++) {
-		Eigen::Matrix<double, 6, 9> dF_dX;
+		/*Eigen::Matrix<double, 6, 9> dF_dX;
 		dF_dX <<
 			-dXInv[fi](0, 0) - dXInv[fi](1, 0)	, dXInv[fi](0, 0)	, dXInv[fi](1, 0)	, 0									, 0					, 0					, 0									, 0					, 0					,
 			-dXInv[fi](0, 1) - dXInv[fi](1, 1)	, dXInv[fi](0, 1)	, dXInv[fi](1, 1)	, 0									, 0					, 0					, 0									, 0					, 0					,
@@ -187,10 +251,13 @@ void MembraneConstraints::gradient(Eigen::VectorXd& g, const bool update)
 				d + d / pow(det, 2) - a * Fnorm / pow(det, 3);
 			dE_dstrain *= restShapeArea[fi];
 		}
-		
+		Eigen::Matrix<double, 1, 9> dE_dX = dE_dstrain*dstrain_dF*dF_dX;*/
 
-		Eigen::Matrix<double, 1, 9> dE_dX = dE_dstrain*dstrain_dF*dF_dX;
 
+		//Eigen::Matrix<double, 1, 3> asd; asd << 1, 1, 1;
+		Eigen::Matrix<double, 1, 9> dE_dX = da_dX(fi);
+			
+		//CurrV(restShapeF(fi, 0), 0) * B1(fi, 0)
 		for (int vi = 0; vi < 3; vi++)
 			for (int xyz = 0; xyz < 3; xyz++)
 				g[restShapeF(fi, vi) + (xyz*restShapeV.rows())] += dE_dX[xyz*3 + vi];

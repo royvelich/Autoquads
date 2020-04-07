@@ -17,6 +17,8 @@ private:
 	Eigen::VectorXd d;
 	Eigen::VectorXd detJ;
 	
+	Eigen::MatrixX3d B1, B2;
+
 	//dense mesh derivative matrices
 	Eigen::Matrix3Xd D1d, D2d;
 
@@ -30,6 +32,9 @@ private:
 	//tmp matrices used to speed up computation of the deformation gradient, green strain, etc
 	std::vector<Eigen::Matrix2d> dXInv, strain;
 	std::vector<Eigen::Matrix<double, 3, 2>> F;
+
+	Eigen::Matrix<double, 3, 9> dB1_dX(int fi);
+	Eigen::Matrix<double, 1, 9> da_dX(int fi);
 
 	//sets important properties of the rest shape using the set of points passed in as parameters
 	void setRestShapeFromCurrentConfiguration();
