@@ -315,42 +315,52 @@ void MeshWrapper::GenerateIsometric2DSoup(const Eigen::MatrixX3i& f_in, const Ei
 void MeshWrapper::GetOrderedProjectedVertices(const std::vector<RDS::ProjectionDescriptor>& input_pairs, RDS::FaceIndex face_index, std::vector<RDS::ProjectionDescriptor>& output_pairs)
 {
 	output_pairs.resize(3);
-	for (int j = 0; j <= 1; j++)
+
+	const RDS::ProjectionDescriptor pair0 = input_pairs[0];
+	const RDS::ProjectionDescriptor pair1 = input_pairs[1];
+	RDS::ProjectionDescriptor pair2;
+
+	for (int i = 0; i < 3; i++)
 	{
-		const RDS::ProjectionDescriptor pair0 = input_pairs[j % 2];
-		const RDS::ProjectionDescriptor pair1 = input_pairs[(j + 1) % 2];
-		RDS::ProjectionDescriptor pair2;
-
-		for (int i = 0; i < 3; i++)
+		const RDS::VertexIndex current_vertex_index = f_dom_(face_index, i);
+		if ((current_vertex_index != pair0.first) && (current_vertex_index != pair1.first))
 		{
-			const RDS::VertexIndex current_vertex_index = f_dom_(face_index, 0);
-			if ((current_vertex_index != pair0.first) && (current_vertex_index != pair1.first))
-			{
-				pair2.first = current_vertex_index;
-			}
+			pair2.first = current_vertex_index;
 		}
+	}
 
-		Eigen::Vector3d v0_in = v_dom_.row(pair0.first);
-		Eigen::Vector3d v1_in = v_dom_.row(pair1.first);
-		Eigen::Vector3d v2_in = v_dom_.row(pair2.first);
+	Eigen::Vector3d v0_in = v_dom_.row(pair0.first);
+	Eigen::Vector3d v1_in = v_dom_.row(pair1.first);
+	Eigen::Vector3d v2_in = v_dom_.row(pair2.first);
 
-		const Eigen::Vector3d vec0_in = v0_in - v1_in;
-		const Eigen::Vector3d vec1_in = v2_in - v1_in;
-		Eigen::Vector3d cross = vec0_in.cross(vec1_in);
-		
-		if(cross.z() > 0)
-		{
-			Eigen::Vector2d v0_out = pair0.second;
-			Eigen::Vector2d v1_out = pair1.second;
-			Eigen::Vector2d v2_out = Eigen::Vector2d::Zero();
-			
-			ProjectVertexToPlane(v0_in, v1_in, v2_in, v0_out, v1_out, pair2.second);
+	const Eigen::Vector3d vec0_in = v0_in - v1_in;
+	const Eigen::Vector3d vec1_in = v2_in - v1_in;
 
-			output_pairs[0] = pair0;
-			output_pairs[1] = pair1;
-			output_pairs[2] = pair2;
-			break;
-		}
+	Eigen::Vector2d v0_out = pair0.second;
+	Eigen::Vector2d v1_out = pair1.second;
+	Eigen::Vector2d v2_out = Eigen::Vector2d::Zero();
+	ProjectVertexToPlane(v0_in, v1_in, v2_in, v0_out, v1_out, v2_out);
+	pair2.second = v2_out;
+
+	const Eigen::Vector2d vec0_out = v0_out - v1_out;
+	const Eigen::Vector2d vec1_out = v2_out - v1_out;
+
+	const Eigen::Vector3d vec0_out_3d = Eigen::Vector3d(vec0_out.x(), vec0_out.y(), 0);
+	const Eigen::Vector3d vec1_out_3d = Eigen::Vector3d(vec1_out.x(), vec1_out.y(), 0);
+	
+	Eigen::Vector3d cross = vec0_out_3d.cross(vec1_out_3d);
+	
+	if(cross.z() > 0)
+	{
+		output_pairs[0] = pair0;
+		output_pairs[1] = pair1;
+		output_pairs[2] = pair2;
+	}
+	else
+	{
+		output_pairs[0] = pair1;
+		output_pairs[1] = pair0;
+		output_pairs[2] = pair2;
 	}
 }
 
@@ -822,7 +832,8 @@ void MeshWrapper::Initialize()
 	ComputeEdgeDescriptorMap(e_dom_, ed_dom_2_ei_dom_);
 	ComputeAdjacencyMaps(f_dom_, ed_dom_2_ei_dom_, vi_dom_2_fi_dom_, ei_dom_2_fi_dom_, fi_dom_2_vi_dom_, fi_dom_2_ei_dom_, fi_dom_2_fi_dom_);
 		
-	GenerateRandom2DSoup(f_dom_, f_im_, v_im_);
+	//GenerateRandom2DSoup(f_dom_, f_im_, v_im_);
+	GenerateIsometric2DSoup(f_dom_, v_dom_, ed_dom_2_ei_dom_, ei_dom_2_fi_dom_, f_im_, v_im_);
 	ComputeEdges(f_im_, e_im_);
 	ComputeEdgeDescriptorMap(e_im_, ed_im_2_ei_im_);
 	ComputeAdjacencyMaps(f_im_, ed_im_2_ei_im_, vi_im_2_fi_im_, ei_im_2_fi_im_, fi_im_2_vi_im_, fi_im_2_ei_im_, fi_im_2_fi_im_);
