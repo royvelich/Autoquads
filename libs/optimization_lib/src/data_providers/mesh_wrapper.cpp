@@ -287,6 +287,8 @@ void MeshWrapper::GenerateIsometric2DSoup(const Eigen::MatrixX3i& f_in, const Ei
 		}
 
 		face_visit_status[current_face_index] = true;
+		stack.pop_back();
+		
 		for (int i = 0; i < 3; i++)
 		{
 			RDS::ProjectionDescriptor first_pair = output_pairs[i];
@@ -308,7 +310,8 @@ void MeshWrapper::GenerateIsometric2DSoup(const Eigen::MatrixX3i& f_in, const Ei
 			}
 		}
 
-		stack.pop_back();
+		
+
 	}
 }
 
@@ -350,7 +353,7 @@ void MeshWrapper::GetOrderedProjectedVertices(const std::vector<RDS::ProjectionD
 	
 	Eigen::Vector3d cross = vec0_out_3d.cross(vec1_out_3d);
 	
-	if(cross.z() > 0)
+	if(cross.z() < 0)
 	{
 		output_pairs[0] = pair0;
 		output_pairs[1] = pair1;
