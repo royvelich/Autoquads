@@ -18,6 +18,9 @@ export const CHANGE_DELTA = 'CHANGE_DELTA';
 export const CHANGE_LAMBDA = 'CHANGE_LAMBDA';
 export const CHANGE_ZETA = 'CHANGE_ZETA';
 export const CHANGE_SEAMLESS_WEIGHT = 'CHANGE_SEAMLESS_WEIGHT';
+export const CHANGE_SEAMLESS_ANGLE_WEIGHT = 'CHANGE_SEAMLESS_ANGLE_WEIGHT';
+export const CHANGE_SEAMLESS_LENGTH_WEIGHT = 'CHANGE_SEAMLESS_LENGTH_WEIGHT';
+export const CHANGE_SEAMLESS_TRANSLATION_WEIGHT = 'CHANGE_SEAMLESS_TRANSLATION_WEIGHT';
 export const CHANGE_SELECTED_EDGE_SEAMLESS_WEIGHT = 'CHANGE_SELECTED_EDGE_SEAMLESS_WEIGHT';
 export const CHANGE_SELECTED_EDGE_SEAMLESS_ANGLE_WEIGHT = 'CHANGE_SELECTED_EDGE_SEAMLESS_ANGLE_WEIGHT';
 export const CHANGE_SELECTED_EDGE_SEAMLESS_LENGTH_WEIGHT = 'CHANGE_SELECTED_EDGE_SEAMLESS_LENGTH_WEIGHT';
@@ -204,6 +207,27 @@ export const setZeta = zeta => {
 export const setSeamlessWeight = weight => {
     return {
         type: CHANGE_SEAMLESS_WEIGHT,
+        weight: weight
+    };
+};
+
+export const setSeamlessAngleWeight = weight => {
+    return {
+        type: CHANGE_SEAMLESS_ANGLE_WEIGHT,
+        weight: weight
+    };
+};
+
+export const setSeamlessLengthWeight = weight => {
+    return {
+        type: CHANGE_SEAMLESS_LENGTH_WEIGHT,
+        weight: weight
+    };
+};
+
+export const setSeamlessTrnalsationWeight = weight => {
+    return {
+        type: CHANGE_SEAMLESS_TRANSLATION_WEIGHT,
         weight: weight
     };
 };

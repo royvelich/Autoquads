@@ -88,6 +88,9 @@ Engine::Engine(const Napi::CallbackInfo& info) :
 	properties_map_.insert({ "length_value_per_edge", static_cast<uint32_t>(SeamlessObjective<Eigen::StorageOptions::RowMajor>::Properties::LengthValuePerEdge) });
 	properties_map_.insert({ "edge_angle_weight", static_cast<uint32_t>(SeamlessObjective<Eigen::StorageOptions::RowMajor>::Properties::EdgeAngleWeight) });
 	properties_map_.insert({ "edge_length_weight", static_cast<uint32_t>(SeamlessObjective<Eigen::StorageOptions::RowMajor>::Properties::EdgeLengthWeight) });
+	properties_map_.insert({ "angle_weight", static_cast<uint32_t>(SeamlessObjective<Eigen::StorageOptions::RowMajor>::Properties::AngleWeight) });
+	properties_map_.insert({ "length_weight", static_cast<uint32_t>(SeamlessObjective<Eigen::StorageOptions::RowMajor>::Properties::LengthWeight) });
+	properties_map_.insert({ "translation_weight", static_cast<uint32_t>(SeamlessObjective<Eigen::StorageOptions::RowMajor>::Properties::TranslationWeight) });
 	properties_map_.insert({ "translation_interval", static_cast<uint32_t>(SeamlessObjective<Eigen::StorageOptions::RowMajor>::Properties::Interval) });
 	properties_map_.insert({ "interval", static_cast<uint32_t>(SingularPointsPositionObjective<Eigen::StorageOptions::RowMajor>::Properties::Interval) });
 	properties_map_.insert({ "singularity_weight_per_vertex", static_cast<uint32_t>(SingularPointsPositionObjective<Eigen::StorageOptions::RowMajor>::Properties::SingularityWeightPerVertex) });

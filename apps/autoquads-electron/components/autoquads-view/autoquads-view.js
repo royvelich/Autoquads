@@ -182,9 +182,17 @@ export class AutoquadsView extends connect(store)(LitElement) {
                 type: Number,
                 attribute: 'seamless-weight'
             },
-            seamlessWeight: {
+            seamlessAngleWeight: {
                 type: Number,
-                attribute: 'seamless-weight'
+                attribute: 'seamless-angle-weight'
+            },
+            seamlessLengthWeight: {
+                type: Number,
+                attribute: 'seamless-length-weight'
+            },
+            seamlessTranslationWeight: {
+                type: Number,
+                attribute: 'seamless-translation-weight'
             },
             selectedEdgeSeamlessAngleWeight: {
                 type: Number,
@@ -497,6 +505,51 @@ export class AutoquadsView extends connect(store)(LitElement) {
     get seamlessWeight() {
         if(HelpersExports.isModuleLoaded(this.moduleState)) {
             return this._engine.getObjectiveFunctionProperty('Seamless', 'weight', 'none', '');
+        }
+    }
+
+    set seamlessAngleWeight(value) {
+        if(HelpersExports.isModuleLoaded(this.moduleState)) {
+            const oldValue = this._seamlessAngleWeight;
+            this._seamlessAngleWeight = value;
+            this._engine.setObjectiveFunctionProperty('Seamless', 'angle_weight', '', value);
+            this.requestUpdate('seamlessAngleWeight', oldValue);
+        }
+    }
+
+    get seamlessAngleWeight() {
+        if(HelpersExports.isModuleLoaded(this.moduleState)) {
+            return this._engine.getObjectiveFunctionProperty('Seamless', 'angle_weight', 'none', '');
+        }
+    }
+
+    set seamlessLengthWeight(value) {
+        if(HelpersExports.isModuleLoaded(this.moduleState)) {
+            const oldValue = this._seamlessLengthWeight;
+            this._seamlessLengthWeight = value;
+            this._engine.setObjectiveFunctionProperty('Seamless', 'length_weight', '', value);
+            this.requestUpdate('seamlessLengthWeight', oldValue);
+        }
+    }
+
+    get seamlessLengthWeight() {
+        if(HelpersExports.isModuleLoaded(this.moduleState)) {
+            return this._engine.getObjectiveFunctionProperty('Seamless', 'length_weight', 'none', '');
+        }
+    }
+
+    set seamlessTranslationWeight(value) {
+        if(HelpersExports.isModuleLoaded(this.moduleState)) {
+            const oldValue = this._seamlessTranslationWeight;
+            this._seamlessTranslationWeight = value;
+            this._engine.setObjectiveFunctionProperty('Seamless', 'translation_weight', '', value);
+            this.requestUpdate('seamlessTranslationWeight', oldValue);
+        }
+    }
+
+    get seamlessTranslationWeight() {
+        if(HelpersExports.isModuleLoaded(this.moduleState)) {
+            return this._engine.getObjectiveFunctionProperty('Seamless', 'translation_weight', 'none', '');
         }
     }
 

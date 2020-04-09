@@ -39,6 +39,11 @@ public:
 		LengthValuePerEdge,
 		EdgeAngleWeight,
 		EdgeLengthWeight,
+
+		AngleWeight,
+		LengthWeight,
+		TranslationWeight,
+		
 		Interval
 	};
 	
@@ -47,7 +52,10 @@ public:
 	 */
 	SeamlessObjective(const std::shared_ptr<MeshDataProvider>& mesh_data_provider, const std::shared_ptr<EmptyDataProvider>& empty_data_provider, const std::string& name, const bool enforce_children_psd = true) :
 		SummationObjective(mesh_data_provider, empty_data_provider, name, enforce_children_psd),
-		zeta_(1)
+		zeta_(1),
+		angle_weight_(1),
+		length_weight_(1),
+		translation_weight_(1)
 	{
 
 	}
@@ -68,9 +76,9 @@ public:
 	 */
 	void SetInterval(const double interval)
 	{
-		for (auto& edge_pair_translation_objective : edge_pair_integer_translation_objectives)
+		for (auto& edge_pair_integer_translation_objective : edge_pair_integer_translation_objectives)
 		{
-			edge_pair_translation_objective->SetInterval(interval);
+			edge_pair_integer_translation_objective->SetInterval(interval);
 		}
 
 		interval_ = interval;
@@ -113,6 +121,33 @@ public:
 			}
 		}
 	}
+	
+	void SetAngleWeight(const double weight)
+	{
+		angle_weight_ = weight;
+		for (auto& periodic_edge_pair_angle_objective : periodic_edge_pair_angle_objectives)
+		{
+			periodic_edge_pair_angle_objective->SetWeight(weight);
+		}
+	}
+
+	void SetLengthWeight(const double weight)
+	{
+		length_weight_ = weight;
+		for (auto& edge_pair_length_objective : edge_pair_length_objectives)
+		{
+			edge_pair_length_objective->SetWeight(weight);
+		}
+	}
+
+	void SetTranslationWeight(const double weight)
+	{
+		translation_weight_ = weight;
+		for (auto& edge_pair_integer_translation_objective : edge_pair_integer_translation_objectives)
+		{
+			edge_pair_integer_translation_objective->SetWeight(weight);
+		}
+	}
 
 	bool SetProperty(const int32_t property_id, const std::any property_context, const std::any property_value) override
 	{
@@ -133,6 +168,15 @@ public:
 		case Properties::EdgeLengthWeight:
 			SetEdgeLengthWeight(static_cast<RDS::EdgeIndex>(std::any_cast<double>(property_context)), std::any_cast<const double>(property_value));
 			return true;
+		case Properties::AngleWeight:
+			SetAngleWeight(std::any_cast<const double>(property_value));
+			return true;
+		case Properties::LengthWeight:
+			SetLengthWeight(std::any_cast<const double>(property_value));
+			return true;
+		case Properties::TranslationWeight:
+			SetTranslationWeight(std::any_cast<const double>(property_value));
+			return true;	
 		case Properties::Interval:
 			SetInterval(std::any_cast<const double>(property_value));
 			return true;
@@ -217,7 +261,22 @@ public:
 
 		return 0;
 	}
-	
+
+	double GetAngleWeight() const
+	{
+		return angle_weight_;
+	}
+
+	double GetLengthWeight() const
+	{
+		return length_weight_;
+	}
+
+	double GetTranslationWeight() const
+	{
+		return translation_weight_;
+	}
+
 	bool GetProperty(const int32_t property_id, const int32_t property_modifier_id, const std::any property_context, std::any& property_value) override
 	{
 		if (SummationObjective<ObjectiveFunction<StorageOrder_, Eigen::SparseVector<double>>, Eigen::VectorXd>::GetProperty(property_id, property_modifier_id, property_context, property_value))
@@ -244,6 +303,15 @@ public:
 		case Properties::EdgeLengthWeight:
 			property_value = GetEdgeLengthWeight(static_cast<RDS::EdgeIndex>(std::any_cast<double>(property_context)));
 			return true;
+		case Properties::AngleWeight:
+			property_value = GetAngleWeight();
+			return true;
+		case Properties::LengthWeight:
+			property_value = GetLengthWeight();
+			return true;
+		case Properties::TranslationWeight:
+			property_value = GetTranslationWeight();
+			return true;		
 		}
 
 		return false;
@@ -256,17 +324,17 @@ public:
 	{	
 		auto edge_pair_angle_objective = std::make_shared<EdgePairAngleObjective<StorageOrder_>>(this->GetMeshDataProvider(), edge_pair_data_provider, false);
 		auto edge_pair_length_objective = std::make_shared<EdgePairLengthObjective<StorageOrder_>>(this->GetMeshDataProvider(), edge_pair_data_provider, false);
-		auto edge_pair_translation_objective = std::make_shared<EdgePairTranslationObjective<StorageOrder_>>(this->GetMeshDataProvider(), edge_pair_data_provider, this->GetEnforceChildrenPsd());
+		//auto edge_pair_translation_objective = std::make_shared<EdgePairTranslationObjective<StorageOrder_>>(this->GetMeshDataProvider(), edge_pair_data_provider, this->GetEnforceChildrenPsd());
 		auto edge_pair_integer_translation_objective = std::make_shared<EdgePairIntegerTranslationObjective<StorageOrder_>>(this->GetMeshDataProvider(), edge_pair_data_provider, this->GetEnforceChildrenPsd());
 
 		double period = M_PI / 2;
 		auto empty_data_provider = std::make_shared<EmptyDataProvider>(this->GetMeshDataProvider());
 		std::shared_ptr<PeriodicObjective<StorageOrder_>> periodic_edge_pair_angle_objective = std::make_shared<PeriodicObjective<StorageOrder_>>(this->GetMeshDataProvider(), empty_data_provider, edge_pair_angle_objective, period, this->GetEnforceChildrenPsd());
 
-		periodic_edge_pair_angle_objective->SetWeight(1);
-		edge_pair_length_objective->SetWeight(1);
-		edge_pair_translation_objective->SetWeight(1);
-		edge_pair_integer_translation_objective->SetWeight(100);
+		periodic_edge_pair_angle_objective->SetWeight(angle_weight_);
+		edge_pair_length_objective->SetWeight(length_weight_);
+		//edge_pair_translation_objective->SetWeight(1);
+		edge_pair_integer_translation_objective->SetWeight(translation_weight_);
 		
 		this->AddObjectiveFunction(periodic_edge_pair_angle_objective);
 		this->AddObjectiveFunction(edge_pair_length_objective);
@@ -277,7 +345,7 @@ public:
 		edge_pair_length_objectives.push_back(edge_pair_length_objective);
 		edge_pair_angle_objectives.push_back(edge_pair_angle_objective);
 		edge_pair_integer_translation_objectives.push_back(edge_pair_integer_translation_objective);
-		edge_pair_translation_objectives.push_back(edge_pair_translation_objective);
+		//edge_pair_translation_objectives.push_back(edge_pair_translation_objective);
 	}
 
 protected:
@@ -349,6 +417,11 @@ private:
 	 */
 	double zeta_;
 	double interval_;
+
+	double angle_weight_;
+	double length_weight_;
+	double translation_weight_;
+	
 	tbb::concurrent_vector<std::shared_ptr<EdgePairLengthObjective<StorageOrder_>>> edge_pair_length_objectives;
 	tbb::concurrent_vector<std::shared_ptr<EdgePairAngleObjective<StorageOrder_>>> edge_pair_angle_objectives;
 	tbb::concurrent_vector<std::shared_ptr<PeriodicObjective<StorageOrder_>>> periodic_edge_pair_angle_objectives;

@@ -16,6 +16,9 @@ import {
     CHANGE_LAMBDA,
     CHANGE_ZETA,
     CHANGE_SEAMLESS_WEIGHT,
+    CHANGE_SEAMLESS_ANGLE_WEIGHT,
+    CHANGE_SEAMLESS_LENGTH_WEIGHT,
+    CHANGE_SEAMLESS_TRANSLATION_WEIGHT,  
     CHANGE_SELECTED_EDGE_SEAMLESS_ANGLE_WEIGHT,
     CHANGE_SELECTED_EDGE_SEAMLESS_LENGTH_WEIGHT,
     CHANGE_SINGULARITY_WEIGHT,
@@ -65,6 +68,9 @@ const INITIAL_STATE = {
     lambda: 0,
     zeta: 0.95,
     seamlessWeight: 0,
+    seamlessAngleWeight: 0,
+    seamlessLengthWeight: 0,
+    seamlessTranslationWeight: 0,
     singularityWeight: 0,
     singularityInterval: 1,
     positionWeight: 100,
@@ -288,6 +294,23 @@ export const reducer = (state = INITIAL_STATE, action) => {
             return {
                 ...state,
                 seamlessWeight: action.weight
+            };
+        case CHANGE_SEAMLESS_ANGLE_WEIGHT:
+            return {
+                ...state,
+                seamlessAngleWeight: action.weight
+            };
+
+        case CHANGE_SEAMLESS_LENGTH_WEIGHT:
+            return {
+                ...state,
+                seamlessLengthWeight: action.weight
+            };
+
+        case CHANGE_SEAMLESS_TRANSLATION_WEIGHT:
+            return {
+                ...state,
+                seamlessTranslationWeight: action.weight
             };
         case CHANGE_SELECTED_EDGE_SEAMLESS_ANGLE_WEIGHT:
             return {

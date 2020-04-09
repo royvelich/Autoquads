@@ -163,6 +163,39 @@ export class AutoquadsSideBar extends SideBar {
                     @value-changed="${this._seamlessWeightInputChanged}">
                 </side-bar-parameter-input>
                 <side-bar-parameter-input
+                    id="seamless-angle-weight"
+                    decrease-key="1"
+                    increase-key="2"
+                    value="${this._seamlessAngleWeight}"
+                    min="0"
+                    max="1000"
+                    step="1"
+                    label="Seamless Angle Weight"
+                    @value-changed="${this._seamlessAngleWeightInputChanged}">
+                </side-bar-parameter-input>
+                <side-bar-parameter-input
+                    id="seamless-length-weight"
+                    decrease-key="3"
+                    increase-key="4"
+                    value="${this._seamlessLengthWeight}"
+                    min="0"
+                    max="1000"
+                    step="1"
+                    label="Seamless Length Weight"
+                    @value-changed="${this._seamlessLengthWeightInputChanged}">
+                </side-bar-parameter-input>
+                <side-bar-parameter-input
+                    id="seamless-translation-weight"
+                    decrease-key="5"
+                    increase-key="6"
+                    value="${this._seamlessTranslationWeight}"
+                    min="0"
+                    max="1000"
+                    step="1"
+                    label="Seamless Translation Weight"
+                    @value-changed="${this._seamlessTranslationWeightInputChanged}">
+                </side-bar-parameter-input>
+                <side-bar-parameter-input
                     id="singularity-weight"
                     increase-key="l"
                     decrease-key="k"
@@ -470,6 +503,18 @@ export class AutoquadsSideBar extends SideBar {
                 type: Number,
                 attribute: 'seamless-weight'
             },
+            seamlessAngleWeight: {
+                type: Number,
+                attribute: 'seamless-angle-weight'
+            },
+            seamlessLengthWeight: {
+                type: Number,
+                attribute: 'seamless-length-weight'
+            },
+            seamlessTranslationWeight: {
+                type: Number,
+                attribute: 'seamless-translation-weight'
+            },
             selectedEdgeSeamlessAngleWeight: {
                 type: Number,
                 attribute: 'selected-edge-seamless-angle-weight'
@@ -758,6 +803,36 @@ export class AutoquadsSideBar extends SideBar {
 
     get seamlessWeight() {
         return this._seamlessWeight;
+    }
+
+    set seamlessAngleWeight(value) {
+        const oldValue = this._seamlessAngleWeight;
+        this._seamlessAngleWeight = value;
+        this.requestUpdate('seamlessAngleWeight', oldValue);
+    }
+
+    get seamlessAngleWeight() {
+        return this._seamlessAngleWeight;
+    }
+
+    set seamlessLengthWeight(value) {
+        const oldValue = this._seamlessLengthWeight;
+        this._seamlessLengthWeight = value;
+        this.requestUpdate('seamlessLengthWeight', oldValue);
+    }
+
+    get seamlessLengthWeight() {
+        return this._seamlessLengthWeight;
+    }
+
+    set seamlessTranslationWeight(value) {
+        const oldValue = this._seamlessTranslationWeight;
+        this._seamlessTranslationWeight = value;
+        this.requestUpdate('seamlessTranslationWeight', oldValue);
+    }
+
+    get seamlessTranslationWeight() {
+        return this._seamlessTranslationWeight;
     }
 
     set selectedEdgeSeamlessAngleWeight(value) {
@@ -1226,6 +1301,18 @@ export class AutoquadsSideBar extends SideBar {
 
     _seamlessWeightInputChanged(e) {
         store.dispatch(ActionsExports.setSeamlessWeight(e.srcElement.value)); 
+    }
+
+    _seamlessAngleWeightInputChanged(e) {
+        store.dispatch(ActionsExports.setSeamlessAngleWeight(e.srcElement.value)); 
+    }
+
+    _seamlessLengthWeightInputChanged(e) {
+        store.dispatch(ActionsExports.setSeamlessLengthWeight(e.srcElement.value)); 
+    }
+
+    _seamlessTranslationWeightInputChanged(e) {
+        store.dispatch(ActionsExports.setSeamlessTranslationWeight(e.srcElement.value)); 
     }
 
     _selectedEdgeSeamlessAngleWeightInputChanged(e) {
