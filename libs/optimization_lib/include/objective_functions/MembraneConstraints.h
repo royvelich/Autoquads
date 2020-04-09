@@ -33,9 +33,11 @@ private:
 	std::vector<Eigen::Matrix2d> dXInv, strain;
 	std::vector<Eigen::Matrix<double, 3, 2>> F;
 
-	Eigen::Matrix<double, 9, 9> ddB1_dXdX(int fi);
+	Eigen::Matrix<Eigen::Matrix<double, 9, 9>, 1, 3> ddB1_dXdX(int fi);
 	Eigen::Matrix<double, 3, 9> dB1_dX(int fi);
+
 	Eigen::Matrix<double, 1, 9> da_dX(int fi);
+	Eigen::Matrix<double, 9, 9> dda_dXdX(int fi);
 
 	//sets important properties of the rest shape using the set of points passed in as parameters
 	void setRestShapeFromCurrentConfiguration();
