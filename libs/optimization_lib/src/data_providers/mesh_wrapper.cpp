@@ -3,6 +3,7 @@
 
 // STL includes
 //#include <ranges>
+#include <queue>
 
 // Optimization library includes
 #include <data_providers//mesh_wrapper.h>
@@ -249,7 +250,7 @@ void MeshWrapper::GenerateRandom2DSoup(const Eigen::MatrixX3i& f_in, Eigen::Matr
 void MeshWrapper::GenerateIsometric2DSoup(const Eigen::MatrixX3i& f_in, const Eigen::MatrixX3d& v_in, const ED2EIMap& ed_2_ei, const EI2FIsMap& ei_2_fi, Eigen::MatrixX3i& f_out, Eigen::MatrixX2d& v_out)
 {
 	std::vector<bool> face_visit_status;
-	std::vector<std::tuple<RDS::FaceIndex, RDS::ProjectionDescriptor, RDS::ProjectionDescriptor>> stack;
+	std::queue<std::tuple<RDS::FaceIndex, RDS::ProjectionDescriptor, RDS::ProjectionDescriptor>> queue;
 	GenerateSoupFaces(f_in, f_out);
 	v_out = Eigen::MatrixX2d::Zero(3 * f_out.rows(), 2);
 	face_visit_status.resize(f_out.rows());
@@ -266,13 +267,13 @@ void MeshWrapper::GenerateIsometric2DSoup(const Eigen::MatrixX3i& f_in, const Ei
 	double edge_length = (v_dom_.row(e_dom_(initial_edge_index, 0)) - v_dom_.row(e_dom_(initial_edge_index, 1))).norm();
 	Eigen::Vector2d initial_v0 = Eigen::Vector2d(0, 0);
 	Eigen::Vector2d initial_v1 = Eigen::Vector2d(edge_length, 0);
-	stack.push_back(std::tuple(0, std::make_pair(initial_v0_index, initial_v0), std::make_pair(initial_v1_index, initial_v1)));
+	queue.push(std::tuple(0, std::make_pair(initial_v0_index, initial_v0), std::make_pair(initial_v1_index, initial_v1)));
 
-	while(!stack.empty())
+	while(!queue.empty())
 	{
-		RDS::FaceIndex current_face_index = std::get<0>(stack.back());
-		RDS::ProjectionDescriptor pair0_in = std::get<1>(stack.back());
-		RDS::ProjectionDescriptor pair1_in = std::get<2>(stack.back());
+		RDS::FaceIndex current_face_index = std::get<0>(queue.front());
+		RDS::ProjectionDescriptor pair0_in = std::get<1>(queue.front());
+		RDS::ProjectionDescriptor pair1_in = std::get<2>(queue.front());
 
 		std::vector<RDS::ProjectionDescriptor> input_pairs;
 		std::vector<RDS::ProjectionDescriptor> output_pairs;
@@ -287,7 +288,7 @@ void MeshWrapper::GenerateIsometric2DSoup(const Eigen::MatrixX3i& f_in, const Ei
 		}
 
 		face_visit_status[current_face_index] = true;
-		stack.pop_back();
+		queue.pop();
 		
 		for (int i = 0; i < 3; i++)
 		{
@@ -304,14 +305,11 @@ void MeshWrapper::GenerateIsometric2DSoup(const Eigen::MatrixX3i& f_in, const Ei
 				{
 					if (!face_visit_status[adjacent_face_index])
 					{
-						stack.push_back(std::make_tuple(adjacent_face_index, first_pair, second_pair));
+						queue.push(std::make_tuple(adjacent_face_index, first_pair, second_pair));
 					}
 				}
 			}
 		}
-
-		
-
 	}
 }
 
@@ -332,18 +330,46 @@ void MeshWrapper::GetOrderedProjectedVertices(const std::vector<RDS::ProjectionD
 		}
 	}
 
-	Eigen::Vector3d v0_in = v_dom_.row(pair0.first);
-	Eigen::Vector3d v1_in = v_dom_.row(pair1.first);
-	Eigen::Vector3d v2_in = v_dom_.row(pair2.first);
+	RDS::ProjectionDescriptor unordered_pairs[3];
+	unordered_pairs[0] = pair0;
+	unordered_pairs[1] = pair1;
+	unordered_pairs[2] = pair2;
 
-	const Eigen::Vector3d vec0_in = v0_in - v1_in;
-	const Eigen::Vector3d vec1_in = v2_in - v1_in;
+	RDS::ProjectionDescriptor ordered_pairs[3];
+	for(int i = 0; i < 3; i++)
+	{
+		const int64_t vertex1_index = f_dom_(face_index, i);
+		const int64_t vertex2_index = f_dom_(face_index, (i + 1) % 3);
+		const int64_t vertex3_index = f_dom_(face_index, (i + 2) % 3);
 
-	Eigen::Vector2d v0_out = pair0.second;
-	Eigen::Vector2d v1_out = pair1.second;
+		if ((vertex1_index == pair0.first) && (vertex2_index == pair1.first))
+		{
+			ordered_pairs[0] = pair0;
+			ordered_pairs[1] = pair1;
+			ordered_pairs[2] = pair2;
+			break;
+		}
+		
+		if ((vertex1_index == pair1.first) && (vertex2_index == pair0.first))
+		{
+			ordered_pairs[0] = pair1;
+			ordered_pairs[1] = pair0;
+			ordered_pairs[2] = pair2;
+			break;
+		}
+	}
+
+	
+
+	Eigen::Vector3d v0_in = v_dom_.row(ordered_pairs[0].first);
+	Eigen::Vector3d v1_in = v_dom_.row(ordered_pairs[1].first);
+	Eigen::Vector3d v2_in = v_dom_.row(ordered_pairs[2].first);
+
+	Eigen::Vector2d v0_out = ordered_pairs[0].second;
+	Eigen::Vector2d v1_out = ordered_pairs[1].second;
 	Eigen::Vector2d v2_out = Eigen::Vector2d::Zero();
 	ProjectVertexToPlane(v0_in, v1_in, v2_in, v0_out, v1_out, v2_out);
-	pair2.second = v2_out;
+	ordered_pairs[2].second = v2_out;
 
 	const Eigen::Vector2d vec0_out = v0_out - v1_out;
 	const Eigen::Vector2d vec1_out = v2_out - v1_out;
@@ -355,15 +381,15 @@ void MeshWrapper::GetOrderedProjectedVertices(const std::vector<RDS::ProjectionD
 	
 	if(cross.z() < 0)
 	{
-		output_pairs[0] = pair0;
-		output_pairs[1] = pair1;
-		output_pairs[2] = pair2;
+		output_pairs[0] = ordered_pairs[0];
+		output_pairs[1] = ordered_pairs[1];
+		output_pairs[2] = ordered_pairs[2];
 	}
 	else
 	{
-		output_pairs[0] = pair1;
-		output_pairs[1] = pair0;
-		output_pairs[2] = pair2;
+		output_pairs[0] = ordered_pairs[1];
+		output_pairs[1] = ordered_pairs[0];
+		output_pairs[2] = ordered_pairs[2];
 	}
 }
 
