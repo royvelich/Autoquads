@@ -263,10 +263,10 @@ public:
 		auto empty_data_provider = std::make_shared<EmptyDataProvider>(this->GetMeshDataProvider());
 		std::shared_ptr<PeriodicObjective<StorageOrder_>> periodic_edge_pair_angle_objective = std::make_shared<PeriodicObjective<StorageOrder_>>(this->GetMeshDataProvider(), empty_data_provider, edge_pair_angle_objective, period, this->GetEnforceChildrenPsd());
 
-		periodic_edge_pair_angle_objective->SetWeight(100);
+		periodic_edge_pair_angle_objective->SetWeight(1);
 		edge_pair_length_objective->SetWeight(1);
 		edge_pair_translation_objective->SetWeight(1);
-		edge_pair_integer_translation_objective->SetWeight(1);
+		edge_pair_integer_translation_objective->SetWeight(100);
 		
 		this->AddObjectiveFunction(periodic_edge_pair_angle_objective);
 		this->AddObjectiveFunction(edge_pair_length_objective);
