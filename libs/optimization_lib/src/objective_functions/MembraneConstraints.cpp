@@ -136,7 +136,7 @@ Eigen::Matrix<double, 1, 9> MembraneConstraints::da_dX(int fi) {
 	
 	Eigen::Matrix<double, 1, 9> da_dX = Dx.transpose()*XX;
 	Eigen::Matrix<double, 1, 9> dc_dX = Dy.transpose()*XX;
-	return da_dX;
+	return dc_dX;
 }
 
 Eigen::Matrix<double, 9, 9> MembraneConstraints::dda_dXdX(int fi) {
@@ -166,7 +166,7 @@ Eigen::Matrix<double, 9, 9> MembraneConstraints::dda_dXdX(int fi) {
 	Eigen::Matrix<double, 9, 9> ddc_dXdX = Dy[0] * XX[0] + Dy[1] * XX[1] + Dy[2] * XX[2];
 	
 
-	return dda_dXdX;
+	return ddc_dXdX;
 }
 
 Eigen::Matrix<Eigen::Matrix<double, 9, 9>, 1, 3> MembraneConstraints::ddB1_dXdX(int fi) {
@@ -176,24 +176,24 @@ Eigen::Matrix<Eigen::Matrix<double, 9, 9>, 1, 3> MembraneConstraints::ddB1_dXdX(
 	Eigen::Matrix<double, 3, 1> V0 = CurrV.row(restShapeF(fi, 0));
 	Eigen::Matrix<double, 3, 1> V1 = CurrV.row(restShapeF(fi, 1));
 	Eigen::Matrix<double, 3, 1> V2 = CurrV.row(restShapeF(fi, 2));
-	double norm_V1V0 = (V1 - V0).norm();
-	double a_b = V1[0] - V0[0]; // x1 - x0
-	double c_d = V1[1] - V0[1]; // y1 - y0
-	double e_f = V1[2] - V0[2]; // z1 - z0
+	double NormB1 = (V1 - V0).norm();
+	double Qx = V1[0] - V0[0]; // x1 - x0
+	double Qy = V1[1] - V0[1]; // y1 - y0
+	double Qz = V1[2] - V0[2]; // z1 - z0
 
 
-	double xxx = (-3 * a_b*(pow(c_d, 2) + pow(e_f, 2))) / pow(norm_V1V0, 5);
-	double yyy = (-3 * c_d*(pow(a_b, 2) + pow(e_f, 2))) / pow(norm_V1V0, 5);
-	double zzz = (-3 * e_f*(pow(a_b, 2) + pow(c_d, 2))) / pow(norm_V1V0, 5);
+	double xxx = (-3 * Qx*(pow(Qy, 2) + pow(Qz, 2))) / pow(NormB1, 5);
+	double yyy = (-3 * Qy*(pow(Qx, 2) + pow(Qz, 2))) / pow(NormB1, 5);
+	double zzz = (-3 * Qz*(pow(Qx, 2) + pow(Qy, 2))) / pow(NormB1, 5);
 	
-	double xxy = (c_d*(pow(norm_V1V0, 2) - 3 * pow(a_b, 2))) / pow(norm_V1V0, 5);
-	double xxz = (e_f*(pow(norm_V1V0, 2) - 3 * pow(a_b, 2))) / pow(norm_V1V0, 5);
-	double xyy = (a_b*(pow(norm_V1V0, 2) - 3 * pow(c_d, 2))) / pow(norm_V1V0, 5);
-	double xzz = (a_b*(pow(norm_V1V0, 2) - 3 * pow(e_f, 2))) / pow(norm_V1V0, 5);
-	double yyz = (e_f*(pow(norm_V1V0, 2) - 3 * pow(c_d, 2))) / pow(norm_V1V0, 5);
-	double yzz = (c_d*(pow(norm_V1V0, 2) - 3 * pow(e_f, 2))) / pow(norm_V1V0, 5);
+	double xxy = (Qy*(pow(NormB1, 2) - 3 * pow(Qx, 2))) / pow(NormB1, 5);
+	double xxz = (Qz*(pow(NormB1, 2) - 3 * pow(Qx, 2))) / pow(NormB1, 5);
+	double xyy = (Qx*(pow(NormB1, 2) - 3 * pow(Qy, 2))) / pow(NormB1, 5);
+	double xzz = (Qx*(pow(NormB1, 2) - 3 * pow(Qz, 2))) / pow(NormB1, 5);
+	double yyz = (Qz*(pow(NormB1, 2) - 3 * pow(Qy, 2))) / pow(NormB1, 5);
+	double yzz = (Qy*(pow(NormB1, 2) - 3 * pow(Qz, 2))) / pow(NormB1, 5);
 
-	double xyz = (3*a_b*c_d*e_f) / pow(norm_V1V0, 5);
+	double xyz = (3 * Qx*Qy*Qz) / pow(NormB1, 5);
 
 	H_x <<
 		xxx	, -xxx	, 0, -xxy	, xxy	, 0, -xxz	, xxz	, 0,
@@ -236,35 +236,49 @@ Eigen::Matrix<Eigen::Matrix<double, 9, 9>, 1, 3> MembraneConstraints::ddB1_dXdX(
 
 Eigen::Matrix<double, 3, 9> MembraneConstraints::dB1_dX(int fi) {
 	Eigen::Matrix<double, 3, 9> g;
-	
 	Eigen::Matrix<double, 3, 1> V0 = CurrV.row(restShapeF(fi, 0));
 	Eigen::Matrix<double, 3, 1> V1 = CurrV.row(restShapeF(fi, 1));
 	Eigen::Matrix<double, 3, 1> V2 = CurrV.row(restShapeF(fi, 2));
-	double norm_V1V0 = (V1 - V0).norm();
-	double a_b = V1[0] - V0[0]; // x1 - x0
-	double c_d = V1[1] - V0[1]; // y1 - y0
-	double e_f = V1[2] - V0[2]; // z1 - z0	
-
-	// dB1.x/dx0
-	double dB1x_dx0 = -(pow(c_d,2) + pow(e_f, 2)) / pow(norm_V1V0, 3);
-	// dB1.y/dy0
-	double dB1y_dy0 = -(pow(a_b, 2) + pow(e_f, 2)) / pow(norm_V1V0, 3);
-	// dB1.z/dz0
-	double dB1z_dz0 = -(pow(a_b, 2) + pow(c_d, 2)) / pow(norm_V1V0, 3);
-	// dB1.x/dy0
-	double dB1x_dy0 = (c_d*a_b) / pow(norm_V1V0, 3);
-	// dB1.x/dz0
-	double dB1x_dz0 = (e_f*a_b) / pow(norm_V1V0, 3);
-	// dB1.y/dz0
-	double dB1y_dz0 = (e_f*c_d) / pow(norm_V1V0, 3);
+	double Norm = (V1 - V0).norm();
+	double Qx = V1[0] - V0[0]; // x1 - x0
+	double Qy = V1[1] - V0[1]; // y1 - y0
+	double Qz = V1[2] - V0[2]; // z1 - z0	
+	double dB1x_dx0 = -(pow(Qy, 2) + pow(Qz, 2)) / pow(Norm, 3);
+	double dB1y_dy0 = -(pow(Qx, 2) + pow(Qz, 2)) / pow(Norm, 3);
+	double dB1z_dz0 = -(pow(Qx, 2) + pow(Qy, 2)) / pow(Norm, 3);
+	double dB1x_dy0 = (Qy*Qx) / pow(Norm, 3);
+	double dB1x_dz0 = (Qz*Qx) / pow(Norm, 3);
+	double dB1y_dz0 = (Qz*Qy) / pow(Norm, 3);
 	g <<
 		dB1x_dx0, -dB1x_dx0, 0, dB1x_dy0, -dB1x_dy0, 0, dB1x_dz0, -dB1x_dz0, 0,
 		dB1x_dy0, -dB1x_dy0, 0, dB1y_dy0, -dB1y_dy0, 0, dB1y_dz0, -dB1y_dz0, 0,
 		dB1x_dz0, -dB1x_dz0, 0, dB1y_dz0, -dB1y_dz0, 0, dB1z_dz0, -dB1z_dz0, 0;
-	
 	return g;
 }
 
+Eigen::Matrix<double, 3, 9> MembraneConstraints::dB2_dX(int fi) {
+	Eigen::Matrix<double, 3, 9> g;
+
+	Eigen::Matrix<double, 3, 1> V0 = CurrV.row(restShapeF(fi, 0));
+	Eigen::Matrix<double, 3, 1> V1 = CurrV.row(restShapeF(fi, 1));
+	Eigen::Matrix<double, 3, 1> V2 = CurrV.row(restShapeF(fi, 2));
+	double norm_V1V0 = (V1 - V0).norm();
+	double Qx = V1[0] - V0[0]; // Qx = x1 - x0
+	double Qy = V1[1] - V0[1]; // Qy = y1 - y0
+	double Qz = V1[2] - V0[2]; // Qz = z1 - z0
+
+	double Wx = V2[0] - V0[0]; // Wx = x2 - x0
+	double Wy = V2[1] - V0[1]; // Wy = y2 - y0
+	double Wz = V2[2] - V0[2]; // Wz = z2 - z0	
+
+	double dB2x_dx0;
+	
+	g <<
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0;
+	return g;
+}
 
 double MembraneConstraints::value(const bool update) {
 	
@@ -292,7 +306,7 @@ double MembraneConstraints::value(const bool update) {
 		//total_energy += CurrV.row(restShapeF(fi, 1)) * B1.row(fi).transpose();
 		//total_energy += CurrV.row(restShapeF(fi, 2)) * B1.row(fi).transpose();
 		
-		total_energy += a(fi);
+		total_energy += c(fi);
 		//total_energy += B1(fi,2);
 	}
 	
