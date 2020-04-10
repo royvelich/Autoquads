@@ -282,9 +282,22 @@ void MeshWrapper::GenerateIsometric2DSoup(const Eigen::MatrixX3i& f_in, const Ei
 
 		GetOrderedProjectedVertices(input_pairs, current_face_index, output_pairs);
 		RDS::VertexIndex base_index = current_face_index * 3;
+		RDS::VertexIndex base_vertex_index = f_dom_.coeff(current_face_index, 0);
+
+		int bla;
+		for (int i = 0; i < 3; i++)
+		{
+			if(output_pairs[i].first == base_vertex_index)
+			{
+				bla = i;
+				break;
+			}
+		}
+		
+
 		for(int i = 0; i < 3; i++)
 		{
-			v_out.row(base_index + i) = output_pairs[i].second;
+			v_out.row(base_index + i) = output_pairs[((bla + i) % 3)].second;
 		}
 
 		face_visit_status[current_face_index] = true;

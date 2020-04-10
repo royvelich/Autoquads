@@ -106,7 +106,7 @@ export class AutoquadsSideBar extends SideBar {
             </side-bar-collapsable-section>
             <side-bar-collapsable-section
                 caption="Numeric Properties">
-                <side-bar-parameter-input
+                <!-- <side-bar-parameter-input
                     id="autocuts-weight"
                     increase-key="f"
                     decrease-key="g"
@@ -150,7 +150,7 @@ export class AutoquadsSideBar extends SideBar {
                     step="0.01"
                     label="Zeta"
                     @value-changed="${this._zetaInputChanged}">
-                </side-bar-parameter-input>
+                </side-bar-parameter-input> -->
                 <side-bar-parameter-input
                     id="seamless-weight"
                     increase-key="x"
@@ -168,10 +168,11 @@ export class AutoquadsSideBar extends SideBar {
                     increase-key="w"
                     value="${this._seamlessAngleWeight}"
                     min="0"
-                    max="1000"
-                    step="0.001"
+                    max="30000000000"
+                    step="2"
                     label="Seamless Angle Weight"
-                    @value-changed="${this._seamlessAngleWeightInputChanged}">
+                    @value-changed="${this._seamlessAngleWeightInputChanged}"
+                    is-exponential>
                 </side-bar-parameter-input>
                 <side-bar-parameter-input
                     id="seamless-length-weight"
@@ -179,10 +180,11 @@ export class AutoquadsSideBar extends SideBar {
                     increase-key="r"
                     value="${this._seamlessLengthWeight}"
                     min="0"
-                    max="1000"
-                    step="0.001"
+                    max="30000000000"
+                    step="2"
                     label="Seamless Length Weight"
-                    @value-changed="${this._seamlessLengthWeightInputChanged}">
+                    @value-changed="${this._seamlessLengthWeightInputChanged}"
+                    is-exponential>
                 </side-bar-parameter-input>
                 <side-bar-parameter-input
                     id="seamless-translation-weight"
@@ -190,10 +192,11 @@ export class AutoquadsSideBar extends SideBar {
                     increase-key="y"
                     value="${this._seamlessTranslationWeight}"
                     min="0"
-                    max="1000"
-                    step="0.000001"
+                    max="30000000000"
+                    step="2"
                     label="Seamless Translation Weight"
-                    @value-changed="${this._seamlessTranslationWeightInputChanged}">
+                    @value-changed="${this._seamlessTranslationWeightInputChanged}"
+                    is-exponential>
                 </side-bar-parameter-input>
                 <side-bar-parameter-input
                     id="singularity-weight"
@@ -201,10 +204,11 @@ export class AutoquadsSideBar extends SideBar {
                     decrease-key="k"
                     value="${this._singularityWeight}"
                     min="0"
-                    max="300"
-                    step="0.001"
+                    max="30000000000"
+                    step="2"
                     label="Singularity Weight"
-                    @value-changed="${this._singularityWeightInputChanged}">
+                    @value-changed="${this._singularityWeightInputChanged}"
+                    is-exponential>
                 </side-bar-parameter-input>
                 <side-bar-parameter-input
                     id="singularity-interval"
