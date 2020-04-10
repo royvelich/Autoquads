@@ -262,7 +262,7 @@ Eigen::Matrix<double, 3, 9> MembraneConstraints::dB2_dX(int fi) {
 	Eigen::Matrix<double, 3, 1> V0 = CurrV.row(restShapeF(fi, 0));
 	Eigen::Matrix<double, 3, 1> V1 = CurrV.row(restShapeF(fi, 1));
 	Eigen::Matrix<double, 3, 1> V2 = CurrV.row(restShapeF(fi, 2));
-	double norm_V1V0 = (V1 - V0).norm();
+	
 	double Qx = V1[0] - V0[0]; // Qx = x1 - x0
 	double Qy = V1[1] - V0[1]; // Qy = y1 - y0
 	double Qz = V1[2] - V0[2]; // Qz = z1 - z0
@@ -271,10 +271,41 @@ Eigen::Matrix<double, 3, 9> MembraneConstraints::dB2_dX(int fi) {
 	double Wy = V2[1] - V0[1]; // Wy = y2 - y0
 	double Wz = V2[2] - V0[2]; // Wz = z2 - z0	
 
-	double dB2x_dx0;
-	
+	Eigen::Matrix<double, 3, 1> b2 = -((V1 - V0).cross((V1 - V0).cross(V2 - V0)));
+	double NormB2 = b2.norm();
+
+	double u, v, u_, v_;
+	u = b2[0];
+	v = NormB2;
+
+	////////////////////////////////////////////
+	u_ = (-Qy * Wy - Qz * Wz);
+	v_ = (b2[0] * u_ + b2[1] * (2 * Qx*Wy - Qy * Wx) + b2[2] * (-Qz * Wx + 2 * Qx*Wz)) / NormB2;
+	double dB2x_dx1 = (u_*v - v_ * u) / pow(v, 2);
+	////////////////////////////////////////////
+	u_ = (2*Qz * Wx - Qx * Wz);
+	v_ = (b2[0] * u_ + b2[1] * (-Qy*Wz + 2*Qz * Wy) + b2[2] * (-Qx * Wx - Qy*Wy)) / NormB2;
+	double dB2x_dz1 = (u_*v - v_ * u) / pow(v, 2);
+	////////////////////////////////////////////
+	u_ = (-Qx * Wy +2* Qy * Wx);
+	v_ = (b2[0] * u_ + b2[1] * (-Qz * Wz - Qx * Wx) + b2[2] * (2*Qy * Wz - Qz * Wy)) / NormB2;
+	double dB2x_dy1 = (u_*v - v_ * u) / pow(v, 2);
+	////////////////////////////////////////////
+	u_ = pow(Qy,2) + pow(Qz, 2);
+	v_ = (b2[0] * u_ + b2[1] * (-Qy * Qx) + b2[2] * (-Qx*Qz)) / NormB2;
+	double dB2x_dx2 = (u_*v - v_ * u) / pow(v, 2);
+	////////////////////////////////////////////
+	u_ = -Qy*Qx;
+	v_ = (b2[0] * u_ + b2[1] * (pow(Qx, 2) + pow(Qz, 2)) + b2[2] * (-Qy * Qz)) / NormB2;
+	double dB2x_dy2 = (u_*v - v_ * u) / pow(v, 2);
+	////////////////////////////////////////////
+	u_ = -Qz * Qx;
+	v_ = (b2[0] * u_ + b2[1] * (-Qz*Qy) + b2[2] * (pow(Qx, 2) + pow(Qy, 2))) / NormB2;
+	double dB2x_dz2 = (u_*v - v_ * u) / pow(v, 2);
+	////////////////////////////////////////////
+
 	g <<
-		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		-dB2x_dx1- dB2x_dx2, dB2x_dx1, dB2x_dx2, -dB2x_dy1- dB2x_dy2, dB2x_dy1, dB2x_dy2, -dB2x_dz1- dB2x_dz2, dB2x_dz1, dB2x_dz2,
 		0, 0, 0, 0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0, 0, 0, 0, 0;
 	return g;
@@ -306,8 +337,8 @@ double MembraneConstraints::value(const bool update) {
 		//total_energy += CurrV.row(restShapeF(fi, 1)) * B1.row(fi).transpose();
 		//total_energy += CurrV.row(restShapeF(fi, 2)) * B1.row(fi).transpose();
 		
-		total_energy += c(fi);
-		//total_energy += B1(fi,2);
+		//total_energy += c(fi);
+		total_energy += B2(fi,0);
 	}
 	
 
@@ -369,8 +400,8 @@ void MembraneConstraints::gradient(Eigen::VectorXd& g, const bool update)
 		Eigen::Matrix<double, 1, 9> dE_dX = dE_dstrain*dstrain_dF*dF_dX;*/
 
 
-		Eigen::Matrix<double, 1, 9> dE_dX = da_dX(fi);
-		//Eigen::Matrix<double, 1, 9> dE_dX = dB1_dX(fi).row(2);
+		//Eigen::Matrix<double, 1, 9> dE_dX = da_dX(fi);
+		Eigen::Matrix<double, 1, 9> dE_dX = dB2_dX(fi).row(0);
 			
 		
 		for (int vi = 0; vi < 3; vi++)
