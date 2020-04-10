@@ -225,7 +225,7 @@ export const setSeamlessLengthWeight = weight => {
     };
 };
 
-export const setSeamlessTrnalsationWeight = weight => {
+export const setSeamlessTranslationWeight = weight => {
     return {
         type: CHANGE_SEAMLESS_TRANSLATION_WEIGHT,
         weight: weight

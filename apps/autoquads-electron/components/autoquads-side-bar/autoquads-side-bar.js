@@ -158,40 +158,40 @@ export class AutoquadsSideBar extends SideBar {
                     value="${this._seamlessWeight}"
                     min="0"
                     max="300"
-                    step="0.00001"
+                    step="0.1"
                     label="Seamless Weight"
                     @value-changed="${this._seamlessWeightInputChanged}">
                 </side-bar-parameter-input>
                 <side-bar-parameter-input
                     id="seamless-angle-weight"
-                    decrease-key="1"
-                    increase-key="2"
+                    decrease-key="q"
+                    increase-key="w"
                     value="${this._seamlessAngleWeight}"
                     min="0"
                     max="1000"
-                    step="1"
+                    step="0.001"
                     label="Seamless Angle Weight"
                     @value-changed="${this._seamlessAngleWeightInputChanged}">
                 </side-bar-parameter-input>
                 <side-bar-parameter-input
                     id="seamless-length-weight"
-                    decrease-key="3"
-                    increase-key="4"
+                    decrease-key="e"
+                    increase-key="r"
                     value="${this._seamlessLengthWeight}"
                     min="0"
                     max="1000"
-                    step="1"
+                    step="0.001"
                     label="Seamless Length Weight"
                     @value-changed="${this._seamlessLengthWeightInputChanged}">
                 </side-bar-parameter-input>
                 <side-bar-parameter-input
                     id="seamless-translation-weight"
-                    decrease-key="5"
-                    increase-key="6"
+                    decrease-key="t"
+                    increase-key="y"
                     value="${this._seamlessTranslationWeight}"
                     min="0"
                     max="1000"
-                    step="1"
+                    step="0.000001"
                     label="Seamless Translation Weight"
                     @value-changed="${this._seamlessTranslationWeightInputChanged}">
                 </side-bar-parameter-input>
