@@ -155,13 +155,17 @@ Eigen::Matrix<double, 9, 9> MembraneConstraints::dda_dXdX(int fi) {
 	Eigen::Matrix<double, 3, 9> db1_dX = dB1_dX(fi);
 	Eigen::Matrix<Eigen::Matrix<double, 9, 9>,1,3> XX, ddb1_dXdX = ddB1_dXdX(fi);
 
-	XX[0] = V0[0] * ddb1_dXdX[0] + V0[1] * ddb1_dXdX[1] + V0[2] * ddb1_dXdX[2] + 2 * dV0_dX.transpose()*db1_dX;
-	XX[1] = V1[0] * ddb1_dXdX[0] + V1[1] * ddb1_dXdX[1] + V1[2] * ddb1_dXdX[2] + 2 * dV1_dX.transpose()*db1_dX;
-	XX[2] = V2[0] * ddb1_dXdX[0] + V2[1] * ddb1_dXdX[1] + V2[2] * ddb1_dXdX[2] + 2 * dV2_dX.transpose()*db1_dX;
+	XX[0] = V0[0] * ddb1_dXdX[0] + V0[1] * ddb1_dXdX[1] + V0[2] * ddb1_dXdX[2] 
+		+ dV0_dX.transpose()*db1_dX + db1_dX.transpose()*dV0_dX;
+	XX[1] = V1[0] * ddb1_dXdX[0] + V1[1] * ddb1_dXdX[1] + V1[2] * ddb1_dXdX[2] 
+		+ dV1_dX.transpose()*db1_dX + db1_dX.transpose()*dV1_dX;
+	XX[2] = V2[0] * ddb1_dXdX[0] + V2[1] * ddb1_dXdX[1] + V2[2] * ddb1_dXdX[2] 
+		+ dV2_dX.transpose()*db1_dX + db1_dX.transpose()*dV2_dX;
 	
 	Eigen::Matrix<double, 9, 9> dda_dXdX = Dx[0] * XX[0] + Dx[1] * XX[1] + Dx[2] * XX[2];
 	Eigen::Matrix<double, 9, 9> ddc_dXdX = Dy[0] * XX[0] + Dy[1] * XX[1] + Dy[2] * XX[2];
 	
+
 	return dda_dXdX;
 }
 
