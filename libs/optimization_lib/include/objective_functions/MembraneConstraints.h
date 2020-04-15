@@ -38,8 +38,8 @@ private:
 	Eigen::Matrix<double, 3, 9> dB1_dX(int fi);
 	Eigen::Matrix<double, 3, 9> dB2_dX(int fi);
 
-	Eigen::Matrix<double, 1, 9> da_dX(int fi);
-	Eigen::Matrix<double, 9, 9> dda_dXdX(int fi);
+	Eigen::Matrix<double, 4, 9> dJ_dX(int fi);
+	Eigen::Matrix<Eigen::Matrix<double, 9, 9>, 1, 4> ddJ_dXdX(int fi);
 
 	//sets important properties of the rest shape using the set of points passed in as parameters
 	void setRestShapeFromCurrentConfiguration();

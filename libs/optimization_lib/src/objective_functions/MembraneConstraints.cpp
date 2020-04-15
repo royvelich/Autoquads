@@ -114,20 +114,17 @@ void MembraneConstraints::updateX(const Eigen::VectorXd& X)
 	}
 }
 
-Eigen::Matrix<double, 1, 9> MembraneConstraints::da_dX(int fi) {
+Eigen::Matrix<double, 4, 9> MembraneConstraints::dJ_dX(int fi) {
 	Eigen::Vector3d Dx = D1d.col(fi);
 	Eigen::Vector3d Dy = D2d.col(fi);
-	
 	Eigen::Matrix<double, 1, 3> V0 = CurrV.row(restShapeF(fi, 0));
 	Eigen::Matrix<double, 1, 3> V1 = CurrV.row(restShapeF(fi, 1));
 	Eigen::Matrix<double, 1, 3> V2 = CurrV.row(restShapeF(fi, 2));
-
 	Eigen::Matrix<double, 3, 9> dV0_dX, dV1_dX, dV2_dX;
 	dV0_dX.setZero(); dV0_dX(0, 0) = 1; dV0_dX(1, 3) = 1; dV0_dX(2, 6) = 1;
 	dV1_dX.setZero(); dV1_dX(0, 1) = 1; dV1_dX(1, 4) = 1; dV1_dX(2, 7) = 1;
 	dV2_dX.setZero(); dV2_dX(0, 2) = 1; dV2_dX(1, 5) = 1; dV2_dX(2, 8) = 1;
 	
-
 	Eigen::Matrix<double, 3, 9> YY, XX, db1_dX = dB1_dX(fi), db2_dX = dB2_dX(fi);
 	XX <<
 		(V0 * db1_dX + B1.row(fi)*dV0_dX),
@@ -138,14 +135,15 @@ Eigen::Matrix<double, 1, 9> MembraneConstraints::da_dX(int fi) {
 		(V1 * db2_dX + B2.row(fi)*dV1_dX),
 		(V2 * db2_dX + B2.row(fi)*dV2_dX);
 
-	Eigen::Matrix<double, 1, 9> da_dX = Dx.transpose()*XX;
-	Eigen::Matrix<double, 1, 9> db_dX = Dx.transpose()*YY;
-	Eigen::Matrix<double, 1, 9> dc_dX = Dy.transpose()*XX;
-	Eigen::Matrix<double, 1, 9> dd_dX = Dy.transpose()*YY;
-	return dc_dX;
+	Eigen::Matrix<double, 4, 9> dJ;
+	dJ.row(0) = Dx.transpose()*XX;
+	dJ.row(1) = Dx.transpose()*YY;
+	dJ.row(2) = Dy.transpose()*XX;
+	dJ.row(3) = Dy.transpose()*YY;
+	return dJ;
 }
 
-Eigen::Matrix<double, 9, 9> MembraneConstraints::dda_dXdX(int fi) {
+Eigen::Matrix<Eigen::Matrix<double, 9, 9>,1,4> MembraneConstraints::ddJ_dXdX(int fi) {
 	Eigen::Vector3d Dx = D1d.col(fi);
 	Eigen::Vector3d Dy = D2d.col(fi);
 	
@@ -159,20 +157,62 @@ Eigen::Matrix<double, 9, 9> MembraneConstraints::dda_dXdX(int fi) {
 	dV2_dX.setZero(); dV2_dX(0, 2) = 1; dV2_dX(1, 5) = 1; dV2_dX(2, 8) = 1;
 
 	Eigen::Matrix<double, 3, 9> db1_dX = dB1_dX(fi);
-	Eigen::Matrix<Eigen::Matrix<double, 9, 9>,1,3> XX, ddb1_dXdX = ddB1_dXdX(fi);
+	Eigen::Matrix<double, 3, 9> db2_dX = dB2_dX(fi);
+	Eigen::Matrix<Eigen::Matrix<double, 9, 9>,1,3> 
+		XX, YY,
+		ddb1_dXdX = ddB1_dXdX(fi),
+		ddb2_dXdX = ddB2_dXdX(fi);
 
-	XX[0] = V0[0] * ddb1_dXdX[0] + V0[1] * ddb1_dXdX[1] + V0[2] * ddb1_dXdX[2] 
-		+ dV0_dX.transpose()*db1_dX + db1_dX.transpose()*dV0_dX;
-	XX[1] = V1[0] * ddb1_dXdX[0] + V1[1] * ddb1_dXdX[1] + V1[2] * ddb1_dXdX[2] 
-		+ dV1_dX.transpose()*db1_dX + db1_dX.transpose()*dV1_dX;
-	XX[2] = V2[0] * ddb1_dXdX[0] + V2[1] * ddb1_dXdX[1] + V2[2] * ddb1_dXdX[2] 
-		+ dV2_dX.transpose()*db1_dX + db1_dX.transpose()*dV2_dX;
-	
-	Eigen::Matrix<double, 9, 9> dda_dXdX = Dx[0] * XX[0] + Dx[1] * XX[1] + Dx[2] * XX[2];
-	Eigen::Matrix<double, 9, 9> ddc_dXdX = Dy[0] * XX[0] + Dy[1] * XX[1] + Dy[2] * XX[2];
-	
+	XX[0] = 
+		V0[0] * ddb1_dXdX[0] + 
+		V0[1] * ddb1_dXdX[1] + 
+		V0[2] * ddb1_dXdX[2] + 
+		dV0_dX.transpose()*db1_dX + 
+		db1_dX.transpose()*dV0_dX;
 
-	return ddc_dXdX;
+	XX[1] = 
+		V1[0] * ddb1_dXdX[0] + 
+		V1[1] * ddb1_dXdX[1] + 
+		V1[2] * ddb1_dXdX[2] + 
+		dV1_dX.transpose()*db1_dX + 
+		db1_dX.transpose()*dV1_dX;
+
+	XX[2] = 
+		V2[0] * ddb1_dXdX[0] + 
+		V2[1] * ddb1_dXdX[1] + 
+		V2[2] * ddb1_dXdX[2] + 
+		dV2_dX.transpose()*db1_dX + 
+		db1_dX.transpose()*dV2_dX;
+	
+	
+	YY[0] = 
+		V0[0] * ddb2_dXdX[0] + 
+		V0[1] * ddb2_dXdX[1] + 
+		V0[2] * ddb2_dXdX[2] + 
+		dV0_dX.transpose()*db2_dX + 
+		db2_dX.transpose()*dV0_dX;
+
+	YY[1] = 
+		V1[0] * ddb2_dXdX[0] + 
+		V1[1] * ddb2_dXdX[1] + 
+		V1[2] * ddb2_dXdX[2] + 
+		dV1_dX.transpose()*db2_dX + 
+		db2_dX.transpose()*dV1_dX;
+
+	YY[2] = 
+		V2[0] * ddb2_dXdX[0] + 
+		V2[1] * ddb2_dXdX[1] + 
+		V2[2] * ddb2_dXdX[2] + 
+		dV2_dX.transpose()*db2_dX + 
+		db2_dX.transpose()*dV2_dX;
+	
+	Eigen::Matrix<Eigen::Matrix<double, 9, 9>, 1, 4> H;
+	H[0] = Dx[0] * XX[0] + Dx[1] * XX[1] + Dx[2] * XX[2];
+	H[1] = Dx[0] * YY[0] + Dx[1] * YY[1] + Dx[2] * YY[2];
+	H[2] = Dy[0] * XX[0] + Dy[1] * XX[1] + Dy[2] * XX[2];
+	H[3] = Dy[0] * YY[0] + Dy[1] * YY[1] + Dy[2] * YY[2];
+	
+	return H;
 }
 
 Eigen::Matrix<Eigen::Matrix<double, 9, 9>, 1, 3> MembraneConstraints::ddB1_dXdX(int fi) {
@@ -346,14 +386,14 @@ Eigen::Matrix<Eigen::Matrix<double, 9, 9>, 1, 3> MembraneConstraints::ddB2_dXdX(
 	//hessian
 	auto Hess = [&](int v, int d1, int d2) {
 		return
-			((ddxyz[0](d1, d2)*NormB2 - dnorm[d2] * dxyz(0,d1)) / NormB2_2)
+			((ddxyz[v](d1, d2)*NormB2 - dnorm[d2] * dxyz(v,d1)) / NormB2_2)
 			-
 			(
 				(
 					NormB2_3 *
 					(
-						dxyz(0,d2) *dnorm[d1] *NormB2 +
-						b2[0] * (
+						dxyz(v,d2) *dnorm[d1] *NormB2 +
+						b2[v] * (
 									dxyz(0, d2) * dxyz(0, d1) +
 									dxyz(1, d2) * dxyz(1, d1) +
 									dxyz(2, d2) * dxyz(2, d1) +
@@ -362,28 +402,29 @@ Eigen::Matrix<Eigen::Matrix<double, 9, 9>, 1, 3> MembraneConstraints::ddB2_dXdX(
 									ddxyz[2](d1, d2) * b2[2]
 								)
 					)
-					- 3 * NormB2_2*dnorm[d2]*b2[0] * dnorm[d1] *NormB2
+					- 3 * NormB2_2*dnorm[d2]*b2[v] * dnorm[d1] *NormB2
 				) / NormB2_6
 			);
 	};
 	
-	H[0] <<
-		0, 0			, 0				, 0, 0				, 0				, 0, 0				, 0				,
-		0, Hess(0, 0, 0), Hess(0, 0, 3)	, 0, Hess(0, 0, 1)	, Hess(0, 0, 4)	, 0, Hess(0, 0, 2)	, Hess(0, 0, 5)	,
-		0, 0			, Hess(0, 3, 3)	, 0, Hess(0, 3, 1)	, Hess(0, 3, 4)	, 0, Hess(0, 3, 2)	, Hess(0, 3, 5)	,
-		0, 0			, 0				, 0, 0				, 0				, 0, 0				, 0				,
-		0, 0			, 0				, 0, Hess(0, 1, 1)	, Hess(0, 1, 4)	, 0, Hess(0, 1, 2)	, Hess(0, 1, 5)	,
-		0, 0			, 0				, 0, 0				, Hess(0, 4, 4)	, 0, Hess(0, 4, 2)	, Hess(0, 4, 5)	,
-		0, 0			, 0				, 0, 0				, 0				, 0, 0				, 0				,
-		0, 0			, 0				, 0, 0				, 0				, 0, Hess(0, 2, 2)	, Hess(0, 2, 5)	,
-		0, 0			, 0				, 0, 0				, 0				, 0, 0				, Hess(0, 5, 5);
-	
-	H[0] = H[0].selfadjointView<Eigen::Upper>();
-	for (int r = 0; r < 9; r += 3)
-		H[0].row(r) = -H[0].row(r + 1) - H[0].row(r + 2);
-	for (int c = 0; c < 9; c += 3)
-		H[0].col(c) = -H[0].col(c + 1) - H[0].col(c + 2);
-	
+	for (int xyz = 0; xyz < 3; xyz++) {
+		H[xyz] <<
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, Hess(xyz, 0, 0), Hess(xyz, 0, 3), 0, Hess(xyz, 0, 1), Hess(xyz, 0, 4), 0, Hess(xyz, 0, 2), Hess(xyz, 0, 5),
+			0, 0, Hess(xyz, 3, 3), 0, Hess(xyz, 3, 1), Hess(xyz, 3, 4), 0, Hess(xyz, 3, 2), Hess(xyz, 3, 5),
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, Hess(xyz, 1, 1), Hess(xyz, 1, 4), 0, Hess(xyz, 1, 2), Hess(xyz, 1, 5),
+			0, 0, 0, 0, 0, Hess(xyz, 4, 4), 0, Hess(xyz, 4, 2), Hess(xyz, 4, 5),
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, Hess(xyz, 2, 2), Hess(xyz, 2, 5),
+			0, 0, 0, 0, 0, 0, 0, 0, Hess(xyz, 5, 5);
+
+		H[xyz] = H[xyz].selfadjointView<Eigen::Upper>();
+		for (int r = 0; r < 9; r += 3)
+			H[xyz].row(r) = -H[xyz].row(r + 1) - H[xyz].row(r + 2);
+		for (int c = 0; c < 9; c += 3)
+			H[xyz].col(c) = -H[xyz].col(c + 1) - H[xyz].col(c + 2);
+	}
 	return H;
 }
 
@@ -411,80 +452,65 @@ Eigen::Matrix<double, 3, 9> MembraneConstraints::dB1_dX(int fi) {
 
 Eigen::Matrix<double, 3, 9> MembraneConstraints::dB2_dX(int fi) {
 	Eigen::Matrix<double, 3, 9> g;
-
 	Eigen::Matrix<double, 3, 1> V0 = CurrV.row(restShapeF(fi, 0));
 	Eigen::Matrix<double, 3, 1> V1 = CurrV.row(restShapeF(fi, 1));
 	Eigen::Matrix<double, 3, 1> V2 = CurrV.row(restShapeF(fi, 2));
-	
 	double Qx = V1[0] - V0[0]; // Qx = x1 - x0
 	double Qy = V1[1] - V0[1]; // Qy = y1 - y0
 	double Qz = V1[2] - V0[2]; // Qz = z1 - z0
-
 	double Wx = V2[0] - V0[0]; // Wx = x2 - x0
 	double Wy = V2[1] - V0[1]; // Wy = y2 - y0
 	double Wz = V2[2] - V0[2]; // Wz = z2 - z0	
-
 	Eigen::Matrix<double, 3, 1> b2 = -((V1 - V0).cross((V1 - V0).cross(V2 - V0)));
 	double NormB2 = b2.norm();
+	double NormB2_2 = pow(NormB2, 2);
 
-	double u, v, u_;
-	u = b2[0];
-	v = NormB2;
-	//B1.x gradient
-	u_ = (-Qy * Wy - Qz * Wz);
-	double v_1 = (b2[0] * u_ + b2[1] * (2 * Qx*Wy - Qy * Wx) + b2[2] * (-Qz * Wx + 2 * Qx*Wz)) / NormB2;
-	double dB2x_dx1 = (u_*v - v_1 * u) / pow(v, 2);
-	u_ = (2*Qz * Wx - Qx * Wz);
-	double v_2 = (b2[0] * u_ + b2[1] * (-Qy*Wz + 2*Qz * Wy) + b2[2] * (-Qx * Wx - Qy*Wy)) / NormB2;
-	double dB2x_dz1 = (u_*v - v_2 * u) / pow(v, 2);
-	u_ = (-Qx * Wy +2* Qy * Wx);
-	double v_3 = (b2[0] * u_ + b2[1] * (-Qz * Wz - Qx * Wx) + b2[2] * (2*Qy * Wz - Qz * Wy)) / NormB2;
-	double dB2x_dy1 = (u_*v - v_3 * u) / pow(v, 2);
-	u_ = pow(Qy,2) + pow(Qz, 2);
-	double v_4 = (b2[0] * u_ + b2[1] * (-Qy * Qx) + b2[2] * (-Qx*Qz)) / NormB2;
-	double dB2x_dx2 = (u_*v - v_4 * u) / pow(v, 2);
-	u_ = -Qy*Qx;
-	double v_5 = (b2[0] * u_ + b2[1] * (pow(Qx, 2) + pow(Qz, 2)) + b2[2] * (-Qy * Qz)) / NormB2;
-	double dB2x_dy2 = (u_*v - v_5 * u) / pow(v, 2);
-	u_ = -Qz * Qx;
-	double v_6 = (b2[0] * u_ + b2[1] * (-Qz*Qy) + b2[2] * (pow(Qx, 2) + pow(Qy, 2))) / NormB2;
-	double dB2x_dz2 = (u_*v - v_6 * u) / pow(v, 2);
-	
-	//B1.y gradient
-	u = b2[1];
-	u_ = 2*Qx*Wy - Qy*Wx;
-	double dB2y_dx1 = (u_*v - v_1 * u) / pow(v, 2);
-	u_ = -Qy*Wz+2*Qz*Wy;
-	double dB2y_dz1 = (u_*v - v_2 * u) / pow(v, 2);
-	u_ = -Qz*Wz-Qx*Wx;
-	double dB2y_dy1 = (u_*v - v_3 * u) / pow(v, 2);
-	u_ = -Qy*Qx;
-	double dB2y_dx2 = (u_*v - v_4 * u) / pow(v, 2);
-	u_ = pow(Qz,2) + pow(Qx,2);
-	double dB2y_dy2 = (u_*v - v_5 * u) / pow(v, 2);
-	u_ = -Qz * Qy;
-	double dB2y_dz2 = (u_*v - v_6 * u) / pow(v, 2);
+	Eigen::Matrix<double, 3, 6> dxyz;
+	dxyz.row(0) <<
+		-Qy * Wy - Qz * Wz,
+		-Qx * Wy + 2 * Qy * Wx,
+		2 * Qz*Wx - Qx * Wz,
+		pow(Qy, 2) + pow(Qz, 2),
+		-Qy * Qx,
+		-Qx * Qz;
+	dxyz.row(1) <<
+		2 * Qx*Wy - Qy * Wx,
+		-Qz * Wz - Wx * Qx,
+		-Qy * Wz + 2 * Qz*Wy,
+		-Qx * Qy,
+		pow(Qz, 2) + pow(Qx, 2),
+		-Qz * Qy;
+	dxyz.row(2) <<
+		-Qz * Wx + 2 * Qx*Wz,
+		2 * Qy*Wz - Qz * Wy,
+		-Qx * Wx - Qy * Wy,
+		-Qx * Qz,
+		-Qz * Qy,
+		pow(Qx, 2) + pow(Qy, 2);
 
-	//B1.z gradient
-	u = b2[2];
-	u_ = -Qz*Wx+2*Qx*Wz;
-	double dB2z_dx1 = (u_*v - v_1 * u) / pow(v, 2);
-	u_ = -Qx * Wx - Qy * Wy;
-	double dB2z_dz1 = (u_*v - v_2 * u) / pow(v, 2);
-	u_ = 2*Qy*Wz-Qz*Wy;
-	double dB2z_dy1 = (u_*v - v_3 * u) / pow(v, 2);
-	u_ = -Qx * Qz;
-	double dB2z_dx2 = (u_*v - v_4 * u) / pow(v, 2);
-	u_ = -Qy*Qz;
-	double dB2z_dy2 = (u_*v - v_5 * u) / pow(v, 2);
-	u_ = pow(Qx,2) + pow(Qy, 2);
-	double dB2z_dz2 = (u_*v - v_6 * u) / pow(v, 2);
-	
-	g <<
-		-dB2x_dx1 - dB2x_dx2, dB2x_dx1, dB2x_dx2, -dB2x_dy1 - dB2x_dy2, dB2x_dy1, dB2x_dy2, -dB2x_dz1 - dB2x_dz2, dB2x_dz1, dB2x_dz2,
-		-dB2y_dx1 - dB2y_dx2, dB2y_dx1, dB2y_dx2, -dB2y_dy1 - dB2y_dy2, dB2y_dy1, dB2y_dy2, -dB2y_dz1 - dB2y_dz2, dB2y_dz1, dB2y_dz2,
-		-dB2z_dx1 - dB2z_dx2, dB2z_dx1, dB2z_dx2, -dB2z_dy1 - dB2z_dy2, dB2z_dy1, dB2z_dy2, -dB2z_dz1 - dB2z_dz2, dB2z_dz1, dB2z_dz2;
-	
+	Eigen::Matrix<double, 6, 1> dnorm;
+	dnorm <<
+		(b2[0] * dxyz(0, 0) + b2[1] * dxyz(1, 0) + b2[2] * dxyz(2, 0)) / NormB2,
+		(b2[0] * dxyz(0, 1) + b2[1] * dxyz(1, 1) + b2[2] * dxyz(2, 1)) / NormB2,
+		(b2[0] * dxyz(0, 2) + b2[1] * dxyz(1, 2) + b2[2] * dxyz(2, 2)) / NormB2,
+		(b2[0] * dxyz(0, 3) + b2[1] * dxyz(1, 3) + b2[2] * dxyz(2, 3)) / NormB2,
+		(b2[0] * dxyz(0, 4) + b2[1] * dxyz(1, 4) + b2[2] * dxyz(2, 4)) / NormB2,
+		(b2[0] * dxyz(0, 5) + b2[1] * dxyz(1, 5) + b2[2] * dxyz(2, 5)) / NormB2;
+
+	for (int xyz = 0; xyz < 3; xyz++) {
+		g.row(xyz) <<
+			0,
+			(dxyz(xyz, 0)*NormB2 - b2[xyz] * dnorm[0]) / NormB2_2,
+			(dxyz(xyz, 3)*NormB2 - b2[xyz] * dnorm[3]) / NormB2_2,
+			0,
+			(dxyz(xyz, 1)*NormB2 - b2[xyz] * dnorm[1]) / NormB2_2,
+			(dxyz(xyz, 4)*NormB2 - b2[xyz] * dnorm[4]) / NormB2_2,
+			0,
+			(dxyz(xyz, 2)*NormB2 - b2[xyz] * dnorm[2]) / NormB2_2,
+			(dxyz(xyz, 5)*NormB2 - b2[xyz] * dnorm[5]) / NormB2_2;
+	}
+	for (int c = 0; c < 9; c+=3)
+		g.col(c) = -g.col(c + 1) - g.col(c + 2);
 	return g;
 }
 
@@ -514,9 +540,12 @@ double MembraneConstraints::value(const bool update) {
 		//total_energy += CurrV.row(restShapeF(fi, 1)) * B1.row(fi).transpose();
 		//total_energy += CurrV.row(restShapeF(fi, 2)) * B1.row(fi).transpose();
 		
-		//total_energy += c(fi);
+		total_energy += a(fi);
+		total_energy += b(fi);
+		total_energy += c(fi);
+		total_energy += d(fi);
 
-		total_energy += B2(fi,0);
+		//total_energy += B2(fi,2);
 		
 
 		/*Eigen::Matrix<double, 3, 1> V0 = CurrV.row(restShapeF(fi, 0));
@@ -587,9 +616,14 @@ void MembraneConstraints::gradient(Eigen::VectorXd& g, const bool update)
 		Eigen::Matrix<double, 1, 9> dE_dX = dE_dstrain*dstrain_dF*dF_dX;*/
 
 
-		//Eigen::Matrix<double, 1, 9> dE_dX = da_dX(fi);
-		Eigen::Matrix<double, 1, 9> dE_dX = dB2_dX(fi).row(0);
-			
+		
+		//Eigen::Matrix<double, 1, 9> dE_dX = dB2_dX(fi).row(2);
+		Eigen::Matrix<double, 4, 9> Jed = dJ_dX(fi);
+		Eigen::Matrix<double, 1, 4> one;
+		one << 1, 1, 1, 1;
+
+		Eigen::Matrix<double, 1, 9> dE_dX = one * Jed;
+		
 		
 		for (int vi = 0; vi < 3; vi++)
 			for (int xyz = 0; xyz < 3; xyz++)
@@ -755,8 +789,10 @@ void MembraneConstraints::hessian() {
 		//	dF_dX.transpose() * dstrain_dF.transpose() * dE_dstraindstrain * dstrain_dF * dF_dX 
 		//	+ dF_dX.transpose() * ds_dFdF___dE_ds * dF_dX;
 
-		Eigen::Matrix<double, 9, 9> dE_dXdX = (ddB2_dXdX(fi))[0];
-		//Eigen::Matrix<double, 9, 9> dE_dXdX = dda_dXdX(fi);
+		//Eigen::Matrix<double, 9, 9> dE_dXdX = (ddB2_dXdX(fi))[2];
+		Eigen::Matrix<Eigen::Matrix<double, 9, 9>, 1, 4> dj_dXdX = ddJ_dXdX(fi);
+		Eigen::Matrix<double, 1, 4> dE_dJ; dE_dJ << 1, 1, 1, 1;
+		Eigen::Matrix<double, 9, 9> dE_dXdX = dj_dXdX[0]+ dj_dXdX[1] + dj_dXdX[2] + dj_dXdX[3];
 
 		for (int v1 = 0; v1 < 3; v1++) {
 			for (int v2 = 0; v2 < 3; v2++) {
