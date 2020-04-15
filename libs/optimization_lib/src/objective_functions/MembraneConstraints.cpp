@@ -259,8 +259,8 @@ Eigen::Matrix<Eigen::Matrix<double, 9, 9>, 1, 3> MembraneConstraints::ddB2_dXdX(
 	double NormB2_6 = pow(NormB2, 6);
 
 
-	Eigen::Matrix<double, 6, 1> dx;
-	dx <<
+	Eigen::Matrix<double, 3, 6> dxyz;
+	dxyz.row(0) <<
 		-Qy * Wy - Qz * Wz,
 		-Qx * Wy + 2 * Qy * Wx,
 		2 * Qz*Wx - Qx * Wz,
@@ -268,8 +268,8 @@ Eigen::Matrix<Eigen::Matrix<double, 9, 9>, 1, 3> MembraneConstraints::ddB2_dXdX(
 		-Qy * Qx,
 		-Qx * Qz;
 
-	Eigen::Matrix<double, 6, 6> ddx;
-	ddx <<
+	Eigen::Matrix<Eigen::Matrix<double, 6, 6>, 1,3> ddxyz;
+	ddxyz[0] <<
 		0	,-Wy	,-Wz	,0		, -Qy	, -Qz	,
 		-Wy	, 2 * Wx, 0		, 2 * Qy, -Qx	, 0		,
 		-Wz	, 0		, 2 * Wx, 2 * Qz, 0		, -Qx	,
@@ -277,8 +277,7 @@ Eigen::Matrix<Eigen::Matrix<double, 9, 9>, 1, 3> MembraneConstraints::ddB2_dXdX(
 		-Qy	, -Qx	, 0		, 0		, 0		, 0		,
 		-Qz	, 0		, -Qx	, 0		, 0		, 0;
 
-	Eigen::Matrix<double, 6, 1> dy;
-	dy <<
+	dxyz.row(1) <<
 		2 * Qx*Wy - Qy * Wx,
 		-Qz * Wz - Wx * Qx,
 		-Qy * Wz + 2 * Qz*Wy,
@@ -286,8 +285,7 @@ Eigen::Matrix<Eigen::Matrix<double, 9, 9>, 1, 3> MembraneConstraints::ddB2_dXdX(
 		pow(Qz, 2) + pow(Qx, 2),
 		-Qz * Qy;
 
-	Eigen::Matrix<double, 6, 6> ddy;
-	ddy <<
+	ddxyz[1] <<
 		2 * Wy	, -Wx	, 0		, -Qy	, 2 * Qx, 0		,
 		-Wx		, 0		, -Wz	, -Qx	, 0		, -Qz	,
 		0		, -Wz	, 2 * Wy, 0		, 2 * Qz, -Qy	,
@@ -295,8 +293,7 @@ Eigen::Matrix<Eigen::Matrix<double, 9, 9>, 1, 3> MembraneConstraints::ddB2_dXdX(
 		2 * Qx	, 0		, 2 * Qz, 0		, 0		, 0		,
 		0		, -Qz	, -Qy	, 0		, 0		, 0;
 
-	Eigen::Matrix<double, 6, 1> dz;
-	dz <<
+	dxyz.row(2) <<
 		-Qz * Wx + 2 * Qx*Wz,
 		2 * Qy*Wz - Qz * Wy,
 		-Qx * Wx - Qy * Wy,
@@ -304,8 +301,7 @@ Eigen::Matrix<Eigen::Matrix<double, 9, 9>, 1, 3> MembraneConstraints::ddB2_dXdX(
 		-Qz * Qy,
 		pow(Qx, 2) + pow(Qy, 2);
 
-	Eigen::Matrix<double, 6, 6> ddz;
-	ddz <<
+	ddxyz[2] <<
 		2 * Wz	, 0		, -Wx	, -Qz	, 0		, 2 * Qx,
 		0		, 2 * Wz, -Wy	, 0		, -Qz	, 2 * Qy,
 		-Wx		, -Wy	, 0		, -Qx	, -Qy	, 0		,
@@ -315,12 +311,12 @@ Eigen::Matrix<Eigen::Matrix<double, 9, 9>, 1, 3> MembraneConstraints::ddB2_dXdX(
 
 	Eigen::Matrix<double, 6, 1> dnorm;
 	dnorm <<
-		(b2[0] * dx[0] + b2[1] * dy[0] + b2[2] * dz[0]) / NormB2,
-		(b2[0] * dx[1] + b2[1] * dy[1] + b2[2] * dz[1]) / NormB2,
-		(b2[0] * dx[2] + b2[1] * dy[2] + b2[2] * dz[2]) / NormB2,
-		(b2[0] * dx[3] + b2[1] * dy[3] + b2[2] * dz[3]) / NormB2,
-		(b2[0] * dx[4] + b2[1] * dy[4] + b2[2] * dz[4]) / NormB2,
-		(b2[0] * dx[5] + b2[1] * dy[5] + b2[2] * dz[5]) / NormB2;
+		(b2[0] * dxyz(0, 0) + b2[1] * dxyz(1, 0) + b2[2] * dxyz(2, 0)) / NormB2,
+		(b2[0] * dxyz(0, 1) + b2[1] * dxyz(1, 1) + b2[2] * dxyz(2, 1)) / NormB2,
+		(b2[0] * dxyz(0, 2) + b2[1] * dxyz(1, 2) + b2[2] * dxyz(2, 2)) / NormB2,
+		(b2[0] * dxyz(0, 3) + b2[1] * dxyz(1, 3) + b2[2] * dxyz(2, 3)) / NormB2,
+		(b2[0] * dxyz(0, 4) + b2[1] * dxyz(1, 4) + b2[2] * dxyz(2, 4)) / NormB2,
+		(b2[0] * dxyz(0, 5) + b2[1] * dxyz(1, 5) + b2[2] * dxyz(2, 5)) / NormB2;
 
 
 	////////gradient
@@ -350,20 +346,20 @@ Eigen::Matrix<Eigen::Matrix<double, 9, 9>, 1, 3> MembraneConstraints::ddB2_dXdX(
 	//hessian
 	auto Hess = [&](int v, int d1, int d2) {
 		return
-			((ddx(d1, d2)*NormB2 - dnorm[d2] * dx[d1]) / NormB2_2)
+			((ddxyz[0](d1, d2)*NormB2 - dnorm[d2] * dxyz(0,d1)) / NormB2_2)
 			-
 			(
 				(
 					NormB2_3 *
 					(
-						dx[d2] *dnorm[d1] *NormB2 +
+						dxyz(0,d2) *dnorm[d1] *NormB2 +
 						b2[0] * (
-									dx[d2] * dx[d1] +
-									dy[d2] * dy[d1] +
-									dz[d2] * dz[d1] +
-									ddx(d1, d2) * b2[0] +
-									ddy(d1, d2) * b2[1] +
-									ddz(d1, d2) * b2[2]
+									dxyz(0, d2) * dxyz(0, d1) +
+									dxyz(1, d2) * dxyz(1, d1) +
+									dxyz(2, d2) * dxyz(2, d1) +
+									ddxyz[0](d1, d2) * b2[0] +
+									ddxyz[1](d1, d2) * b2[1] +
+									ddxyz[2](d1, d2) * b2[2]
 								)
 					)
 					- 3 * NormB2_2*dnorm[d2]*b2[0] * dnorm[d1] *NormB2
@@ -381,14 +377,12 @@ Eigen::Matrix<Eigen::Matrix<double, 9, 9>, 1, 3> MembraneConstraints::ddB2_dXdX(
 		0, 0			, 0				, 0, 0				, 0				, 0, 0				, 0				,
 		0, 0			, 0				, 0, 0				, 0				, 0, Hess(0, 2, 2)	, Hess(0, 2, 5)	,
 		0, 0			, 0				, 0, 0				, 0				, 0, 0				, Hess(0, 5, 5);
-	H[0] = H[0].selfadjointView<Eigen::Upper>();
-	H[0].row(0) = -H[0].row(1) - H[0].row(2);
-	H[0].row(3) = -H[0].row(4) - H[0].row(5);
-	H[0].row(6) = -H[0].row(7) - H[0].row(8);
 	
-	H[0].col(0) = -H[0].col(1) - H[0].col(2);
-	H[0].col(3) = -H[0].col(4) - H[0].col(5);
-	H[0].col(6) = -H[0].col(7) - H[0].col(8);
+	H[0] = H[0].selfadjointView<Eigen::Upper>();
+	for (int r = 0; r < 9; r += 3)
+		H[0].row(r) = -H[0].row(r + 1) - H[0].row(r + 2);
+	for (int c = 0; c < 9; c += 3)
+		H[0].col(c) = -H[0].col(c + 1) - H[0].col(c + 2);
 	
 	return H;
 }
