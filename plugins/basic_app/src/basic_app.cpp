@@ -1226,12 +1226,15 @@ void basic_app::initializeSolver(const int index)
 	auto EbendingEdge = std::make_unique<BendingEdge>(Utils::Exponential);
 	EbendingEdge->init_mesh(V, F);
 	EbendingEdge->init();
-	auto SymmDirich = std::make_unique<MembraneConstraints>(Utils::SYMMETRIC_DIRICHLET);
-	SymmDirich->init_mesh(V, F);
-	SymmDirich->init();
-	auto STVK = std::make_unique<MembraneConstraints>(Utils::STVK);
-	STVK->init_mesh(V, F);
-	STVK->init();
+	auto SymmDirichReal = std::make_unique<MembraneConstraints>(Utils::SYMMETRIC_DIRICHLET, Utils::REAL_JACOBIAN);
+	SymmDirichReal->init_mesh(V, F);
+	SymmDirichReal->init();
+	auto STVKReal = std::make_unique<MembraneConstraints>(Utils::STVK, Utils::REAL_JACOBIAN);
+	STVKReal->init_mesh(V, F);
+	STVKReal->init();
+	auto STVKStrain = std::make_unique<MembraneConstraints>(Utils::STVK, Utils::STRAIN);
+	STVKStrain->init_mesh(V, F);
+	STVKStrain->init();
 	auto constraintsPositional = std::make_shared<PenaltyPositionalConstraints>();
 	constraintsPositional->numV = V.rows();
 	constraintsPositional->numF = F.rows();
@@ -1244,8 +1247,9 @@ void basic_app::initializeSolver(const int index)
 	Outputs[index].totalObjective->init_mesh(V, F);
 	Outputs[index].totalObjective->objectiveList.push_back(move(QbendingEdge));
 	Outputs[index].totalObjective->objectiveList.push_back(move(EbendingEdge));
-	Outputs[index].totalObjective->objectiveList.push_back(move(SymmDirich));
-	Outputs[index].totalObjective->objectiveList.push_back(move(STVK));
+	Outputs[index].totalObjective->objectiveList.push_back(move(SymmDirichReal));
+	Outputs[index].totalObjective->objectiveList.push_back(move(STVKReal));
+	Outputs[index].totalObjective->objectiveList.push_back(move(STVKStrain));
 	Outputs[index].totalObjective->objectiveList.push_back(move(constraintsPositional));
 	Outputs[index].totalObjective->init();
 

@@ -16,6 +16,10 @@ public:
 		SYMMETRIC_DIRICHLET
 	};
 
+	enum Jacobian {
+		STRAIN, REAL_JACOBIAN
+	};
+
 	enum FunctionType {
 		Quadratic = 0,
 		Exponential

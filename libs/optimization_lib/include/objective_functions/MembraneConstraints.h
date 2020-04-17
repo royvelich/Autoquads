@@ -24,13 +24,15 @@ private:
 
 	//material type
 	Utils::Material type;
+	Utils::Jacobian JacType;
+
 	//material parameters...
 	double shearModulus, bulkModulus;
 	//keep track of the rest shape area
 	Eigen::VectorXd restShapeArea;
 	Eigen::MatrixX3d CurrV;
 	//tmp matrices used to speed up computation of the deformation gradient, green strain, etc
-	std::vector<Eigen::Matrix2d> dXInv, strain;
+	std::vector<Eigen::Matrix2d> dXInv, strain ,Jac;
 	std::vector<Eigen::Matrix<double, 3, 2>> F;
 
 	Eigen::Matrix<Eigen::Matrix<double, 9, 9>, 1, 3> ddB1_dXdX(int fi);
@@ -45,7 +47,7 @@ private:
 	void setRestShapeFromCurrentConfiguration();
 	virtual void init_hessian();
 public:
-	MembraneConstraints(Utils::Material type);
+	MembraneConstraints(Utils::Material type, Utils::Jacobian JacType);
 	~MembraneConstraints();
 	virtual void init();
 	

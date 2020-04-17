@@ -93,6 +93,9 @@ void ObjectiveFunction::checkGradient(const Eigen::VectorXd& X)
 	double tol = 1e-4;
 	double eps = 1e-10;
 	
+	//std::cout << "g= " << Analytic_gradient  << std::endl;
+	//std::cout << "FD= " << FD_gradient << std::endl;
+	
 	std::cout << name << ": g.norm() = " << Analytic_gradient.norm() << "(analytic) , " << FD_gradient.norm() << "(FD)" << std::endl;
 	for (int i = 0; i < Analytic_gradient.size(); i++) {
         double absErr = abs(FD_gradient[i] - Analytic_gradient[i]);
@@ -121,9 +124,9 @@ void ObjectiveFunction::checkHessian(const Eigen::VectorXd& X)
 	FDH = Utils::BuildMatrix(I, J, S);
 	
 	assert(H.size() == FDH.size() && "The size of analytic hessian & FD hessian must be equal!");
+	
 	/*std::cout << std::endl << "H = " << std::endl <<
 		H.toDense() << std::endl << "-------------";
-	
 	std::cout << std::endl << "FDH = " << std::endl << 
 		FDH.toDense() << std::endl;*/
 
