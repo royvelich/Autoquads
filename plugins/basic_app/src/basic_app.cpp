@@ -1251,6 +1251,9 @@ void basic_app::initializeSolver(const int index)
 	auto STVKStrain = std::make_unique<MembraneConstraints>(Utils::STVK, Utils::STRAIN);
 	STVKStrain->init_mesh(V, F);
 	STVKStrain->init();
+	auto allVertexPositions = std::make_unique<AllVertexPositions>();
+	allVertexPositions->init_mesh(V, F);
+	allVertexPositions->init();
 	auto constraintsPositional = std::make_shared<PenaltyPositionalConstraints>();
 	constraintsPositional->numV = V.rows();
 	constraintsPositional->numF = F.rows();
@@ -1266,6 +1269,7 @@ void basic_app::initializeSolver(const int index)
 	Outputs[index].totalObjective->objectiveList.push_back(move(PbendingEdge));
 	Outputs[index].totalObjective->objectiveList.push_back(move(SymmDirichReal));
 	Outputs[index].totalObjective->objectiveList.push_back(move(STVKStrain));
+	Outputs[index].totalObjective->objectiveList.push_back(move(allVertexPositions));
 	Outputs[index].totalObjective->objectiveList.push_back(move(constraintsPositional));
 	Outputs[index].totalObjective->init();
 
