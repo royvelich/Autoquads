@@ -19,9 +19,7 @@ class BendingEdge : public ObjectiveFunction
 private:
 	//material parameters...
 	double k = 0.05;
-	Utils::FunctionType functionType;
 	//keep track of the rest shape
-	double planarParameter;
 	Eigen::VectorXd restAngle, restEdgeLength, restArea, restConst;
 	int num_hinges = -1;
 	Eigen::VectorXi x0_index, x1_index, x2_index, x3_index;
@@ -44,6 +42,9 @@ private:
 	Eigen::Matrix<double, 4, 3> d0_dx(int hi);
 	int BendingEdge::x_index(int i, int hi);
 public:
+	Utils::FunctionType functionType;
+	float planarParameter;
+
 	BendingEdge(Utils::FunctionType type);
 	~BendingEdge();
 	virtual void init() override;

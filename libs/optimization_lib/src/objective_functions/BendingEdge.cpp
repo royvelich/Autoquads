@@ -189,7 +189,8 @@ void BendingEdge::setRestShapeFromCurrentConfiguration() {
 		double l_n2 = n2.norm();
 
 		//update rest variables
-		restAngle(hi) = acos(n1.dot(n2) / (l_n1*l_n2))*sign;
+		//restAngle(hi) = acos(n1.dot(n2) / (l_n1*l_n2))*sign;
+		restAngle(hi) = 0;
 		restEdgeLength(hi) = e0.norm();
 		restArea(hi) = 0.5 * (l_n1 + l_n2);
 	}

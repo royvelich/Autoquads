@@ -756,7 +756,23 @@ void basic_app::Draw_menu_for_solver_settings() {
 			ImGui::NextColumn();
 			for (auto& obj : Outputs[i].totalObjective->objectiveList) {
 				ImGui::PushID(id++);
-				ImGui::DragFloat("", &(obj->w), 0.05f, 0.0f, 100000.0f);
+				ImGui::DragFloat("w", &(obj->w), 0.05f, 0.0f, 100000.0f);
+				
+				std::shared_ptr<BendingEdge> BE = std::dynamic_pointer_cast<BendingEdge>(obj);
+				if (BE != NULL && BE->functionType == Utils::PlanarL) {
+					ImGui::Text((std::to_string(BE->planarParameter)).c_str());
+					ImGui::SameLine();
+					if (ImGui::Button("*", ImVec2(ImGui::GetFrameHeight(), ImGui::GetFrameHeight())))
+					{
+						BE->planarParameter = (BE->planarParameter * 2) > 1 ? 1 : BE->planarParameter * 2;
+					}
+					ImGui::SameLine();
+					if (ImGui::Button("/", ImVec2(ImGui::GetFrameHeight(), ImGui::GetFrameHeight())))
+					{
+						BE->planarParameter /= 2;
+					}
+
+				}
 				ImGui::NextColumn();
 				ImGui::PopID();
 			}
