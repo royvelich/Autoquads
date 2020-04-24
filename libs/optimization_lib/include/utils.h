@@ -22,7 +22,8 @@ public:
 
 	enum FunctionType {
 		Quadratic = 0,
-		Exponential
+		Exponential,
+		PlanarL
 	};
 
 	static enum LineSearch {

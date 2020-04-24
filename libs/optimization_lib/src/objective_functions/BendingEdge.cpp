@@ -9,7 +9,9 @@ BendingEdge::BendingEdge(Utils::FunctionType type) {
 		name = "Quadratic Bending Edge";
 	else if (functionType == Utils::Exponential)
 		name = "Exponential Bending Edge";
-	w = 1;
+	else if (functionType == Utils::PlanarL)
+		name = "Planar Bending Edge";
+	w = 0;
 	std::cout << name << " constructor" << std::endl;
 }
 
@@ -32,6 +34,7 @@ void BendingEdge::init()
 	x1.resize(num_hinges, 3);
 	x2.resize(num_hinges, 3);
 	x3.resize(num_hinges, 3);
+	planarParameter = 1;
 
 	setRestShapeFromCurrentConfiguration();
 	init_hessian();
@@ -190,6 +193,7 @@ void BendingEdge::setRestShapeFromCurrentConfiguration() {
 		restEdgeLength(hi) = e0.norm();
 		restArea(hi) = 0.5 * (l_n1 + l_n2);
 	}
+	
 	restConst = 3 * restEdgeLength.cwiseProduct(restEdgeLength).cwiseProduct(restArea.cwiseInverse());
 }
 
@@ -214,6 +218,14 @@ Eigen::VectorXd BendingEdge::AngleFunctionvalue(Eigen::VectorXd x) {
 		}
 		return res;
 	}
+	else if (functionType == Utils::PlanarL) {
+		Eigen::VectorXd res(x.rows());
+		for (int i = 0; i < x.rows(); i++) {
+			double x2 = pow(x(i), 2);
+			res(i) = x2/(x2+planarParameter);
+		}
+		return res;
+	}
 }
 
 Eigen::VectorXd BendingEdge::dF_d0(Eigen::VectorXd x) {
@@ -226,6 +238,14 @@ Eigen::VectorXd BendingEdge::dF_d0(Eigen::VectorXd x) {
 		}
 		return res;
 	}
+	else if (functionType == Utils::PlanarL) {
+		Eigen::VectorXd res(x.rows());
+		for (int i = 0; i < x.rows(); i++) {
+			res(i) = (2*x(i)*planarParameter) / 
+				pow(x(i)*x(i) + planarParameter, 2);
+		}
+		return res;
+	}
 }
 
 Eigen::VectorXd BendingEdge::d2F_d0d0(Eigen::VectorXd x) {
@@ -235,6 +255,15 @@ Eigen::VectorXd BendingEdge::d2F_d0d0(Eigen::VectorXd x) {
 		Eigen::VectorXd res(x.rows());
 		for (int i = 0; i < x.rows(); i++) {
 			res(i) = (4 * x(i)*x(i) + 2) * std::exp(x(i)*x(i));
+		}
+		return res;
+	}
+	else if (functionType == Utils::PlanarL) {
+		Eigen::VectorXd res(x.rows());
+		for (int i = 0; i < x.rows(); i++) {
+			double x2 = pow(x(i), 2);
+			res(i) = (2* planarParameter)*(-3*x2+ planarParameter) / 
+				pow(x2 + planarParameter,3);
 		}
 		return res;
 	}

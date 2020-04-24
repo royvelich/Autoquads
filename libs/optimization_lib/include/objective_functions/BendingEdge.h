@@ -21,6 +21,7 @@ private:
 	double k = 0.05;
 	Utils::FunctionType functionType;
 	//keep track of the rest shape
+	double planarParameter;
 	Eigen::VectorXd restAngle, restEdgeLength, restArea, restConst;
 	int num_hinges = -1;
 	Eigen::VectorXi x0_index, x1_index, x2_index, x3_index;
