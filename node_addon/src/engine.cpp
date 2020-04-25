@@ -181,7 +181,7 @@ Engine::Engine(const Napi::CallbackInfo& info) :
 		}
 
 		autocuts_summation_objective_->Initialize();
-		autoquads_summation_objective_->Initialize();
+		//autoquads_summation_objective_->Initialize();
 		
 		/**
 		 * Create newton method iterator

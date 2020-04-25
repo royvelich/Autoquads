@@ -106,7 +106,7 @@ export class AutoquadsSideBar extends SideBar {
             </side-bar-collapsable-section>
             <side-bar-collapsable-section
                 caption="Numeric Properties">
-                <!-- <side-bar-parameter-input
+                <side-bar-parameter-input
                     id="autocuts-weight"
                     increase-key="f"
                     decrease-key="g"
@@ -117,7 +117,7 @@ export class AutoquadsSideBar extends SideBar {
                     label="Autocuts Weight"
                     @value-changed="${this._autocutsWeightInputChanged}">
                 </side-bar-parameter-input>
-                <side-bar-parameter-input
+                <!-- <side-bar-parameter-input
                     id="lambda"
                     increase-key="d"
                     decrease-key="a"
