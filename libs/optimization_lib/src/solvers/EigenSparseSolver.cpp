@@ -58,14 +58,17 @@ void EigenSparseSolver<vectorTypeI, vectorTypeS>::perpareMatrix(const vectorType
 	Eigen::SparseMatrix<double> UpperTriangular_A = Utils::BuildMatrix(II,JJ,SS);
 	full_A = UpperTriangular_A.selfadjointView<Eigen::Upper>();
 
-	double min_eig_value = full_A.toDense().eigenvalues().real().minCoeff();
-	cout << "before: min_eig_value = " << min_eig_value << endl;
-	if (min_eig_value < epsilon) {
-		for (int i = 0; i < full_A.rows(); i++) {
-			full_A.coeffRef(i, i) = full_A.coeff(i, i) + (-min_eig_value + epsilon);
+	if (CheckPositiveDefinite) {
+		double min_eig_value = full_A.toDense().eigenvalues().real().minCoeff();
+		cout << "before: min_eig_value = " << min_eig_value << endl;
+		if (min_eig_value < epsilon) {
+			for (int i = 0; i < full_A.rows(); i++) {
+				full_A.coeffRef(i, i) = full_A.coeff(i, i) + (-min_eig_value + epsilon);
+			}
 		}
+		cout << "after: full min_eig_value = " << full_A.toDense().eigenvalues().real().minCoeff() << endl;
 	}
-	cout << "after: full min_eig_value = " << full_A.toDense().eigenvalues().real().minCoeff() << endl;
+	
 	full_A.makeCompressed();
 }
 

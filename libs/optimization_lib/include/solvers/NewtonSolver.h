@@ -44,6 +44,10 @@ public:
 		return eigen_solver->MSE;
 	}
 
+	void SwitchPositiveDefiniteChecker() {
+		eigen_solver->CheckPositiveDefinite = !(eigen_solver->CheckPositiveDefinite);
+	}
+	
 private:
 	std::unique_ptr<
 		EigenSparseSolver<std::vector<int>, 

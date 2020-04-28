@@ -45,25 +45,18 @@ void AllVertexPositions::gradient(Eigen::VectorXd& g, const bool update)
 
 void AllVertexPositions::hessian()
 {
-	int n = restShapeV.rows();
-	fill(SS.begin(), SS.end(), 0);
-	for (int i = 0; i < n; i++)
-	{
-		SS[i + (0 * n)] = 2;
-		SS[i + (1 * n)] = 2;
-		SS[i + (2 * n)] = 2;
-	}
+	// The hessian is constant!
+	// Empty on purpose
 }
 
 void AllVertexPositions::init_hessian()
 {
+	II.clear(); JJ.clear(); SS.clear();
 	int n = restShapeV.rows();
-	II.resize(3 * n);
-	JJ.resize(3 * n);
 	for (int i = 0; i < 3*n; i++)
 	{
-		II[i] = i;
-		JJ[i] = i;
+		II.push_back(i);
+		JJ.push_back(i);
+		SS.push_back(2);
 	}
-	SS = std::vector<double>(II.size(), 0.);
 }

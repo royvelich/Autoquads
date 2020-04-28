@@ -14,6 +14,7 @@ class EigenSparseSolver
 public:
 	// Matlab instance
 	Engine *engine;
+	bool CheckPositiveDefinite = false;
 
 	EigenSparseSolver();
 	~EigenSparseSolver();
