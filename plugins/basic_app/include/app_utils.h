@@ -12,6 +12,8 @@
 #include "../../libs/optimization_lib/include/solvers/GradientDescentSolver.h"
 #include "../../libs/optimization_lib/include/solvers/worhpSolver.h"
 
+#include "../../libs/optimization_lib/include/objective_functions/STVK.h"
+#include "../../libs/optimization_lib/include/objective_functions/SymmetricDirichlet.h"
 #include "../../libs/optimization_lib/include/objective_functions/AllVertexPositions.h"
 #include "../../libs/optimization_lib/include/objective_functions/BendingEdge.h"
 #include "../../libs/optimization_lib/include/objective_functions/MembraneConstraints.h"

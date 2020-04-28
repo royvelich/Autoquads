@@ -11,15 +11,6 @@
 class Utils
 {
 public:
-	enum Material {
-		STVK = 0,
-		SYMMETRIC_DIRICHLET
-	};
-
-	enum Jacobian {
-		STRAIN, REAL_JACOBIAN
-	};
-
 	enum FunctionType {
 		Quadratic = 0,
 		Exponential,
