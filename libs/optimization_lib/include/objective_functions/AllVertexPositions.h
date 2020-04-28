@@ -8,6 +8,7 @@ private:
 	Eigen::MatrixX3d CurrV;
 public:
 	AllVertexPositions();
+	~AllVertexPositions();
 	virtual void init() override;
 	virtual void updateX(const Eigen::VectorXd& X) override;
 	virtual double value(const bool update) override;

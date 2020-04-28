@@ -4,10 +4,17 @@ PenaltyPositionalConstraints::PenaltyPositionalConstraints()
 {
     name = "Positional Constraints";
 	w = 10000;
+	std::cout << name << " constructor" << std::endl;
+}
+
+PenaltyPositionalConstraints::~PenaltyPositionalConstraints() 
+{
+	std::cout << name << " destructor" << std::endl;
 }
 
 void PenaltyPositionalConstraints::init()
 {
+	std::cout << name << " initialization" << std::endl;
 	if(numV==0 || numF == 0)
 		throw name + " must define members numV & numF before init()!";
 	init_hessian();

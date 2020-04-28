@@ -70,6 +70,7 @@ int solver::run()
 	halt = false;
 	int steps = 0;
 	do {
+		std::cout << "step = " << steps << std::endl;
 		run_one_iteration(steps,false);
 	} while ((a_parameter_was_updated || test_progress()) && !halt && ++steps < num_steps);
 	is_running = false;

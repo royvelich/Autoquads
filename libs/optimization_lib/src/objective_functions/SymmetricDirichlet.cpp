@@ -113,146 +113,60 @@ void SymmetricDirichlet::init_hessian() {
 
 }
 
-//void SymmetricDirichlet::hessian() {
-//	II.clear(); JJ.clear();	SS.clear();
-//	for (int fi = 0; fi < restShapeF.rows(); fi++) {
-//		Eigen::Matrix<double, 1, 4> de_dJ = dE_dJ(fi);
-//		Eigen::Matrix<double, 4, 4> dE_dJdJ;
-//		Eigen::Matrix<double, 9, 9> dE_dXdX;
-//
-//		double det2 = pow(detJ(fi), 2);
-//		double det3 = pow(detJ(fi), 3);
-//		double det4 = pow(detJ(fi), 4);
-//		double Fnorm = pow(a(fi), 2) + pow(b(fi), 2) + pow(c(fi), 2) + pow(d(fi), 2);
-//		
-//		double aa = 1
-//			+ (1 / det2)
-//			- ((4 * a(fi)*d(fi)) / det3)
-//			+ ((3 * det2*Fnorm) / det4);
-//
-//		double bb = 1
-//			+ (1 / det2)
-//			+ ((4 * b(fi)*c(fi)) / det3)
-//			+ ((3 * pow(c(fi), 2)*Fnorm) / det4);
-//
-//		double cc = 1
-//			+ (1 / det2)
-//			+ ((4 * b(fi)*c(fi)) / det3)
-//			+ ((3 * pow(b(fi), 2)*Fnorm) / det4);
-//
-//		double dd = 1
-//			+ (1 / det2)
-//			- ((4 * a(fi)*d(fi)) / det3)
-//			+ ((3 * pow(a(fi), 2)*Fnorm) / det4);
-//
-//		double ab = (-3 * c(fi)*d(fi)*Fnorm) + (2 * (a(fi)*c(fi) - b(fi) * d(fi))*detJ(fi));
-//		ab /= det4;
-//
-//		double ac = (-3 * b(fi)*d(fi)*Fnorm) + (2 * (a(fi)*b(fi) - c(fi) * d(fi))*detJ(fi));
-//		ac /= det4;
-//
-//		double ad = (3 * a(fi)*d(fi)*Fnorm) - ((2 * pow(a(fi), 2) + 2 * pow(d(fi), 2) + Fnorm)*detJ(fi));
-//		ad /= det4;
-//
-//		double bc = (3 * b(fi)*c(fi)*Fnorm) + ((2 * pow(b(fi), 2) + 2 * pow(c(fi), 2) + Fnorm)*detJ(fi));
-//		bc /= det4;
-//
-//		double bd = (-3 * a(fi)*c(fi)*Fnorm) + (2 * (c(fi)*d(fi) - a(fi) * b(fi))*detJ(fi));
-//		bd /= det4;
-//
-//		double cd = (-3 * a(fi)*b(fi)*Fnorm) + (2 * (b(fi)*d(fi) - a(fi) * c(fi))*detJ(fi));
-//		cd /= det4;
-//
-//		dE_dJdJ <<
-//			aa, ab, ac, ad,
-//			ab, bb, bc, bd,
-//			ac, bc, cc, cd,
-//			ad, bd, cd, dd;
-//		dE_dJdJ *= restShapeArea[fi];
-//		
-//		Eigen::Matrix<double, 4, 9> dj_dX = dJ_dX(fi);
-//		Eigen::Matrix<Eigen::Matrix<double, 9, 9>, 1, 4> ddj_dXdX = ddJ_dXdX(fi);
-//			
-//		dE_dXdX = dj_dX.transpose() * dE_dJdJ * dj_dX +
-//			de_dJ[0] * ddj_dXdX[0] +
-//			de_dJ[1] * ddj_dXdX[1] +
-//			de_dJ[2] * ddj_dXdX[2] +
-//			de_dJ[3] * ddj_dXdX[3];
-//			
-//		for (int v1 = 0; v1 < 3; v1++) {
-//			for (int v2 = 0; v2 < 3; v2++) {
-//				for (int xyz1 = 0; xyz1 < 3; xyz1++) {
-//					for (int xyz2 = 0; xyz2 < 3; xyz2++) {
-//						int global_i = restShapeF(fi, v1) + (xyz1*restShapeV.rows());
-//						int global_j = restShapeF(fi, v2) + (xyz2*restShapeV.rows());
-//						if (global_i <= global_j) {
-//							II.push_back(global_i);
-//							JJ.push_back(global_j);
-//							SS.push_back(dE_dXdX(3*xyz1 + v1, 3*xyz2 + v2));
-//						}
-//					}
-//				}
-//			}
-//		}
-//	}
-//}
-
 void SymmetricDirichlet::hessian() {
 	II.clear();
 	JJ.clear();
 	SS.clear();
 	for (int fi = 0; fi < restShapeF.rows(); fi++) {
-		Eigen::Matrix<double, 1, 4> dE_dJ;
+		Eigen::Matrix<double, 1, 4> de_dJ = dE_dJ(fi);
 		Eigen::Matrix<double, 4, 4> dE_dJdJ;
 		Eigen::Matrix<double, 9, 9> dE_dXdX;
 	
 		
 		double det = detJ(fi);
+		double det2 = pow(detJ(fi),2);
+		double det3 = pow(detJ(fi),3);
+		double det4 = pow(detJ(fi),4);
 		double Fnorm = pow(a(fi),2) + pow(b(fi), 2) + pow(c(fi), 2) + pow(d(fi), 2);
-		dE_dJ <<
-			a(fi) + a(fi) / pow(det, 2) - d(fi) * Fnorm / pow(det, 3),
-			b(fi) + b(fi) / pow(det, 2) + c(fi) * Fnorm / pow(det, 3),
-			c(fi) + c(fi) / pow(det, 2) + b(fi) * Fnorm / pow(det, 3),
-			d(fi) + d(fi) / pow(det, 2) - a(fi) * Fnorm / pow(det, 3);
-		dE_dJ *= restShapeArea[fi];
+		
 	
 		double aa = 1
-			+ (1 / pow(det, 2))
-			- ((4 * a(fi)*d(fi)) / pow(det, 3))
-			+ ((3 * pow(d(fi), 2)*Fnorm) / pow(det, 4));
+			+ (1 / det2)
+			- ((4 * a(fi)*d(fi)) / det3)
+			+ ((3 * pow(d(fi), 2)*Fnorm) / det4);
 	
 		double bb = 1
-			+ (1 / pow(det, 2))
-			+ ((4 * b(fi)*c(fi)) / pow(det, 3))
-			+ ((3 * pow(c(fi), 2)*Fnorm) / pow(det, 4));
+			+ (1 / det2)
+			+ ((4 * b(fi)*c(fi)) / det3)
+			+ ((3 * pow(c(fi), 2)*Fnorm) / det4);
 	
 		double cc = 1
-			+ (1 / pow(det, 2))
-			+ ((4 * b(fi)*c(fi)) / pow(det, 3))
-			+ ((3 * pow(b(fi), 2)*Fnorm) / pow(det, 4));
+			+ (1 / det2)
+			+ ((4 * b(fi)*c(fi)) / det3)
+			+ ((3 * pow(b(fi), 2)*Fnorm) / det4);
 	
 		double dd = 1
-			+ (1 / pow(det, 2))
-			- ((4 * a(fi)*d(fi)) / pow(det, 3))
-			+ ((3 * pow(a(fi), 2)*Fnorm) / pow(det, 4));
+			+ (1 / det2)
+			- ((4 * a(fi)*d(fi)) / det3)
+			+ ((3 * pow(a(fi), 2)*Fnorm) / det4);
 	
 		double ab = (-3 * c(fi)*d(fi)*Fnorm) + (2 * (a(fi)*c(fi) - b(fi) * d(fi))*det);
-		ab /= pow(det, 4);
+		ab /= det4;
 	
 		double ac = (-3 * b(fi)*d(fi)*Fnorm) + (2 * (a(fi)*b(fi) - c(fi) * d(fi))*det);
-		ac /= pow(det, 4);
+		ac /= det4;
 	
 		double ad = (3 * a(fi)*d(fi)*Fnorm) - ((2 * pow(a(fi), 2) + 2 * pow(d(fi), 2) + Fnorm)*det);
-		ad /= pow(det, 4);
+		ad /= det4;
 	
 		double bc = (3 * b(fi)*c(fi)*Fnorm) + ((2 * pow(b(fi), 2) + 2 * pow(c(fi), 2) + Fnorm)*det);
-		bc /= pow(det, 4);
+		bc /= det4;
 	
 		double bd = (-3 * a(fi)*c(fi)*Fnorm) + (2 * (c(fi)*d(fi) - a(fi) * b(fi))*det);
-		bd /= pow(det, 4);
+		bd /= det4;
 	
 		double cd = (-3 * a(fi)*b(fi)*Fnorm) + (2 * (b(fi)*d(fi) - a(fi) * c(fi))*det);
-		cd /= pow(det, 4);
+		cd /= det4;
 	
 		dE_dJdJ <<
 			aa, ab, ac, ad,
@@ -265,10 +179,10 @@ void SymmetricDirichlet::hessian() {
 		Eigen::Matrix<Eigen::Matrix<double, 9, 9>, 1, 4> ddj_dXdX = ddJ_dXdX(fi);
 				
 		dE_dXdX = dj_dX.transpose() * dE_dJdJ * dj_dX +
-			dE_dJ[0] * ddj_dXdX[0] +
-			dE_dJ[1] * ddj_dXdX[1] +
-			dE_dJ[2] * ddj_dXdX[2] +
-			dE_dJ[3] * ddj_dXdX[3];
+			de_dJ[0] * ddj_dXdX[0] +
+			de_dJ[1] * ddj_dXdX[1] +
+			de_dJ[2] * ddj_dXdX[2] +
+			de_dJ[3] * ddj_dXdX[3];
 							
 		for (int v1 = 0; v1 < 3; v1++) {
 			for (int v2 = 0; v2 < 3; v2++) {

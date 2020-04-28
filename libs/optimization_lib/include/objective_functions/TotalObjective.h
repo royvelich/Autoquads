@@ -7,6 +7,7 @@ private:
 	virtual void init_hessian() override;
 public:
 	TotalObjective();
+	~TotalObjective();
 	virtual void init() override;
 	virtual void updateX(const Eigen::VectorXd& X) override;
 	virtual double value(const bool update) override;

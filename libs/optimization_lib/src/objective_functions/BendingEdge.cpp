@@ -21,6 +21,7 @@ BendingEdge::~BendingEdge() {
 
 void BendingEdge::init()
 {
+	std::cout << name << " initialization" << std::endl;
 	if (restShapeV.size() == 0 || restShapeF.size() == 0)
 		throw name + " must define members V,F before init()!";
 

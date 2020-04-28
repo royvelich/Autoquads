@@ -4,10 +4,17 @@ AllVertexPositions::AllVertexPositions()
 {
     name = "All Vertex Positions";
 	w = 10000;
+	std::cout << name << " constructor" << std::endl;
+}
+
+AllVertexPositions::~AllVertexPositions()
+{
+	std::cout << name << " destructor" << std::endl;
 }
 
 void AllVertexPositions::init()
 {
+	std::cout << name << " initialization" << std::endl;
 	if (restShapeV.size() == 0 || restShapeF.size() == 0)
 		throw name + " must define members V,F before init()!";
 	init_hessian();
