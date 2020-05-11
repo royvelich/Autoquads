@@ -4,9 +4,8 @@
 #define RDS_PLUGINS_BASIC_MENU_H
 
 #include "app_utils.h"
-#include "core.h"
 
-class basic_app : public igl::opengl::glfw::imgui::ImGuiMenu
+class deformation_plugin : public igl::opengl::glfw::imgui::ImGuiMenu
 {
 private:
 	bool step_by_step;
@@ -54,8 +53,8 @@ private:
 
 public:
 	//Constructor & initialization
-	basic_app();
-	~basic_app(){}
+	deformation_plugin();
+	~deformation_plugin(){}
 
 	// callbacks
 	IGL_INLINE virtual void draw_viewer_menu() override;
@@ -99,7 +98,6 @@ public:
 	void initializeSolver(const int index);
 	void stop_solver_thread();
 	void start_solver_thread();
-	void start_worhp_solver_thread();
 
 	//FD check
 	void checkGradients();

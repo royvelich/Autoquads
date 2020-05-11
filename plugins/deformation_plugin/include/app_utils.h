@@ -10,7 +10,6 @@
 #include "../../libs/optimization_lib/include/solvers/solver.h"
 #include "../../libs/optimization_lib/include/solvers/NewtonSolver.h"
 #include "../../libs/optimization_lib/include/solvers/GradientDescentSolver.h"
-#include "../../libs/optimization_lib/include/solvers/worhpSolver.h"
 
 #include "../../libs/optimization_lib/include/objective_functions/STVK.h"
 #include "../../libs/optimization_lib/include/objective_functions/SymmetricDirichlet.h"
@@ -301,7 +300,6 @@ public:
 	std::shared_ptr<GradientDescentSolver> gradient_descent;
 	std::shared_ptr<solver> solver;
 	std::shared_ptr<TotalObjective> totalObjective;
-	std::shared_ptr<worhpSolver> worhpsolver;
 
 	//Constructor & initialization
 	Output(
@@ -317,7 +315,6 @@ public:
 		
 		// Initialize solver thread
 		std::cout << "CoreID = " << CoreID << std::endl;
-		worhpsolver = std::make_shared<worhpSolver>();
 		newton = std::make_shared<NewtonSolver>(CoreID);
 		gradient_descent = std::make_shared<GradientDescentSolver>(CoreID);
 		if (solver_type == app_utils::NEWTON) 

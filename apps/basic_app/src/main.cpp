@@ -1,10 +1,10 @@
-#include <plugins/basic_app/include/basic_app.h>
+#include <plugins/deformation_plugin/include/deformation_plugin.h>
 
 int main(int argc, char * argv[])
 {
 	igl::opengl::glfw::Viewer viewer;
-	basic_app menu;
-	viewer.plugins.push_back(&menu);
+	deformation_plugin plugin;
+	viewer.plugins.push_back(&plugin);
 	viewer.launch();
 	return EXIT_SUCCESS;
 }

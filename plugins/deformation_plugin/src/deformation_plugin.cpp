@@ -1,9 +1,9 @@
-#include "basic_app/include/basic_app.h"
+#include "plugins/deformation_plugin/include/deformation_plugin.h"
 
-basic_app::basic_app() :
+deformation_plugin::deformation_plugin() :
 	igl::opengl::glfw::imgui::ImGuiMenu(){}
 
-IGL_INLINE void basic_app::init(igl::opengl::glfw::Viewer *_viewer)
+IGL_INLINE void deformation_plugin::init(igl::opengl::glfw::Viewer *_viewer)
 {
 	ImGuiMenu::init(_viewer);
 	if (_viewer)
@@ -52,7 +52,7 @@ IGL_INLINE void basic_app::init(igl::opengl::glfw::Viewer *_viewer)
 	}
 }
 
-void basic_app::load_new_model(const std::string modelpath) {
+void deformation_plugin::load_new_model(const std::string modelpath) {
 	modelPath = modelpath;
 	if (modelPath.length() != 0)
 	{
@@ -98,7 +98,7 @@ void basic_app::load_new_model(const std::string modelpath) {
 	}
 }
 
-IGL_INLINE void basic_app::draw_viewer_menu()
+IGL_INLINE void deformation_plugin::draw_viewer_menu()
 {
 	float w = ImGui::GetContentRegionAvailWidth();
 	float p = ImGui::GetStyle().FramePadding.x;
@@ -174,7 +174,7 @@ IGL_INLINE void basic_app::draw_viewer_menu()
 		IsMouseHoveringAnyWindow = true;
 }
 
-void basic_app::update_zoom_parameter_for_all_cores() {
+void deformation_plugin::update_zoom_parameter_for_all_cores() {
 	for (auto& core : viewer->core_list) {
 		int output_index = -1;
 		for (int i = 0; i < Outputs.size(); i++) {
@@ -203,7 +203,7 @@ void basic_app::update_zoom_parameter_for_all_cores() {
 	}
 }
 
-void basic_app::remove_output(const int output_index) {
+void deformation_plugin::remove_output(const int output_index) {
 	stop_solver_thread();
 	
 	viewer->erase_core(1 + output_index);
@@ -221,7 +221,7 @@ void basic_app::remove_output(const int output_index) {
 	post_resize(frameBufferWidth, frameBufferHeight);
 }
 
-void basic_app::add_output() {
+void deformation_plugin::add_output() {
 	stop_solver_thread();
 	Outputs.push_back(Output(viewer, solver_type,linesearch_type));
 	
@@ -240,7 +240,7 @@ void basic_app::add_output() {
 	post_resize(frameBufferWidth, frameBufferHeight);
 }
 
-IGL_INLINE void basic_app::post_resize(int w, int h)
+IGL_INLINE void deformation_plugin::post_resize(int w, int h)
 {
 	if (viewer)
 	{
@@ -284,7 +284,7 @@ IGL_INLINE void basic_app::post_resize(int w, int h)
 	}
 }
 
-IGL_INLINE bool basic_app::mouse_move(int mouse_x, int mouse_y)
+IGL_INLINE bool deformation_plugin::mouse_move(int mouse_x, int mouse_y)
 {
 	if (IsMouseHoveringAnyWindow | IsMouseDraggingAnyWindow)
 		return true;
@@ -346,13 +346,13 @@ IGL_INLINE bool basic_app::mouse_move(int mouse_x, int mouse_y)
 	return false;
 }
 
-IGL_INLINE bool basic_app::mouse_up(int button, int modifier) {
+IGL_INLINE bool deformation_plugin::mouse_up(int button, int modifier) {
 	IsTranslate = false;
 	IsMouseDraggingAnyWindow = false;
 	return false;
 }
 
-IGL_INLINE bool basic_app::mouse_down(int button, int modifier) {
+IGL_INLINE bool deformation_plugin::mouse_down(int button, int modifier) {
 	if (IsMouseHoveringAnyWindow)
 		IsMouseDraggingAnyWindow = true;
 
@@ -453,7 +453,7 @@ if (find(selected_vertices.begin(), selected_vertices.end(), v) != selected_vert
 	return false;
 }
 
-IGL_INLINE bool basic_app::key_pressed(unsigned int key, int modifiers) {
+IGL_INLINE bool deformation_plugin::key_pressed(unsigned int key, int modifiers) {
 	if ((key == 'F' || key == 'f') && modifiers == 1)
 		mouse_mode = app_utils::FACE_SELECT;
 	if ((key == 'V' || key == 'v') && modifiers == 1)
@@ -484,24 +484,24 @@ IGL_INLINE bool basic_app::key_pressed(unsigned int key, int modifiers) {
 	}
 
 	if ((key == 'w' || key == 'W') && modifiers == 1) {
-		start_worhp_solver_thread();
+
 	}
 	
 	return ImGuiMenu::key_pressed(key, modifiers);
 }
 
-IGL_INLINE void basic_app::shutdown()
+IGL_INLINE void deformation_plugin::shutdown()
 {
 	stop_solver_thread();
 	ImGuiMenu::shutdown();
 }
 
-IGL_INLINE bool basic_app::pre_draw() {
+IGL_INLINE bool deformation_plugin::pre_draw() {
 	//call parent function
 	ImGuiMenu::pre_draw();
 
 	for (auto& out : Outputs)
-		if (out.solver->progressed || out.worhpsolver->IsDataReady)
+		if (out.solver->progressed)
 			update_mesh();
 
 	//Update the model's faces colors in the two screens
@@ -522,7 +522,7 @@ IGL_INLINE bool basic_app::pre_draw() {
 	return false;
 }
 
-void basic_app::Draw_menu_for_colors() {
+void deformation_plugin::Draw_menu_for_colors() {
 	ImVec2 screen_pos = ImGui::GetCursorScreenPos();
 	if (!ImGui::CollapsingHeader("colors", ImGuiTreeNodeFlags_DefaultOpen))
 	{
@@ -537,7 +537,7 @@ void basic_app::Draw_menu_for_colors() {
 	}
 }
 
-void basic_app::Draw_menu_for_Solver() {
+void deformation_plugin::Draw_menu_for_Solver() {
 	if (ImGui::CollapsingHeader("Solver", ImGuiTreeNodeFlags_DefaultOpen))
 	{
 
@@ -546,9 +546,6 @@ void basic_app::Draw_menu_for_Solver() {
 		}
 		if (ImGui::Checkbox(solver_on ? "On" : "Off", &solver_on)) {
 			solver_on ? start_solver_thread() : stop_solver_thread();
-		}
-		if (ImGui::Checkbox("worhp", &worhp_on)) {
-			if(worhp_on) start_worhp_solver_thread();
 		}
 
 		ImGui::Checkbox("Solver settings", &solver_settings);
@@ -594,7 +591,7 @@ void basic_app::Draw_menu_for_Solver() {
 	}
 }
 
-void basic_app::Draw_menu_for_cores(igl::opengl::ViewerCore& core) {
+void deformation_plugin::Draw_menu_for_cores(igl::opengl::ViewerCore& core) {
 	if (!Outputs_Settings)
 		return;
 
@@ -659,7 +656,7 @@ void basic_app::Draw_menu_for_cores(igl::opengl::ViewerCore& core) {
 	ImGui::PopID();
 }
 
-void basic_app::Draw_menu_for_models(igl::opengl::ViewerData& data) {
+void deformation_plugin::Draw_menu_for_models(igl::opengl::ViewerData& data) {
 	if (!Outputs_Settings)
 		return;
 
@@ -719,7 +716,7 @@ void basic_app::Draw_menu_for_models(igl::opengl::ViewerData& data) {
 	ImGui::PopID();
 }
 
-void basic_app::Draw_menu_for_solver_settings() {
+void deformation_plugin::Draw_menu_for_solver_settings() {
 	ImGui::SetNextWindowSize(ImVec2(800, 150), ImGuiSetCond_FirstUseEver);
 	ImGui::Begin("solver settings", NULL);
 	ImGui::SetWindowPos(ImVec2(800, 150), ImGuiSetCond_FirstUseEver);
@@ -833,7 +830,7 @@ void basic_app::Draw_menu_for_solver_settings() {
 	ImGui::End();
 }
 
-void basic_app::Draw_menu_for_output_settings() {
+void deformation_plugin::Draw_menu_for_output_settings() {
 	for (auto& out : Outputs) {
 		if (Outputs_Settings) {
 			ImGui::SetNextWindowSize(ImVec2(200, 300), ImGuiSetCond_FirstUseEver);
@@ -851,7 +848,7 @@ void basic_app::Draw_menu_for_output_settings() {
 	}
 }
 
-void basic_app::Draw_menu_for_text_results() {
+void deformation_plugin::Draw_menu_for_text_results() {
 	for (auto& out:Outputs) {
 		if (show_text) {
 			bool bOpened2(true);
@@ -886,7 +883,7 @@ void basic_app::Draw_menu_for_text_results() {
 	}
 }
 
-void basic_app::UpdateHandles() {
+void deformation_plugin::UpdateHandles() {
 	std::vector<int> CurrHandlesInd;
 	std::vector<Eigen::MatrixX3d> CurrHandlesPosDeformed;
 	CurrHandlesInd.clear();
@@ -930,7 +927,7 @@ void basic_app::UpdateHandles() {
 	}
 }
 
-void basic_app::Update_view() {
+void deformation_plugin::Update_view() {
 	for (auto& data : viewer->data_list)
 		for (auto& out : Outputs)
 			data.copy_options(viewer->core(inputCoreID), viewer->core(out.CoreID));
@@ -944,7 +941,7 @@ void basic_app::Update_view() {
 		OutputModel(i).set_visible(true, Outputs[i].CoreID);
 }
 
-void basic_app::follow_and_mark_selected_faces() {
+void deformation_plugin::follow_and_mark_selected_faces() {
 	//check if there faces which is selected on the left screen
 	int f = pick_face(InputModel().V, InputModel().F, app_utils::InputOnly);
 	for(int i=0;i<Outputs.size();i++)
@@ -993,15 +990,15 @@ void basic_app::follow_and_mark_selected_faces() {
 	}
 }
 	
-igl::opengl::ViewerData& basic_app::InputModel() {
+igl::opengl::ViewerData& deformation_plugin::InputModel() {
 	return viewer->data(inputModelID);
 }
 
-igl::opengl::ViewerData& basic_app::OutputModel(const int index) {
+igl::opengl::ViewerData& deformation_plugin::OutputModel(const int index) {
 	return viewer->data(Outputs[index].ModelID);
 }
 
-Eigen::RowVector3d basic_app::get_face_avg() {
+Eigen::RowVector3d deformation_plugin::get_face_avg() {
 	Eigen::RowVector3d avg; avg << 0, 0, 0;
 	Eigen::RowVector3i face = viewer->data(Model_Translate_ID).F.row(Translate_Index);
 
@@ -1013,7 +1010,7 @@ Eigen::RowVector3d basic_app::get_face_avg() {
 	return avg;
 }
 
-int basic_app::pick_face(Eigen::MatrixXd& V, Eigen::MatrixXi& F, int CoreIndex) {
+int deformation_plugin::pick_face(Eigen::MatrixXd& V, Eigen::MatrixXi& F, int CoreIndex) {
 	// Cast a ray in the view direction starting from the mouse position
 	int CoreID;
 	if (CoreIndex == app_utils::InputOnly)
@@ -1044,7 +1041,7 @@ int basic_app::pick_face(Eigen::MatrixXd& V, Eigen::MatrixXi& F, int CoreIndex) 
 	return fi;
 }
 
-int basic_app::pick_vertex(Eigen::MatrixXd& V, Eigen::MatrixXi& F, int CoreIndex) {
+int deformation_plugin::pick_vertex(Eigen::MatrixXd& V, Eigen::MatrixXi& F, int CoreIndex) {
 	// Cast a ray in the view direction starting from the mouse position
 	int CoreID;
 	if (CoreIndex == app_utils::InputOnly)
@@ -1079,7 +1076,7 @@ int basic_app::pick_vertex(Eigen::MatrixXd& V, Eigen::MatrixXi& F, int CoreIndex
 	return vi;
 }
 
-void basic_app::update_texture(Eigen::MatrixXd& V_uv, const int index) {
+void deformation_plugin::update_texture(Eigen::MatrixXd& V_uv, const int index) {
 	Eigen::MatrixXd V_uv_2D(V_uv.rows(),2);
 	Eigen::MatrixXd V_uv_3D(V_uv.rows(),3);
 	if (V_uv.cols() == 2) {
@@ -1100,7 +1097,7 @@ void basic_app::update_texture(Eigen::MatrixXd& V_uv, const int index) {
 	OutputModel(index).compute_normals();
 }
 	
-void basic_app::checkGradients()
+void deformation_plugin::checkGradients()
 {
 	stop_solver_thread();
 	for (int i = 0; i < Outputs.size(); i++) {
@@ -1116,7 +1113,7 @@ void basic_app::checkGradients()
 	}
 }
 
-void basic_app::checkHessians()
+void deformation_plugin::checkHessians()
 {
 	stop_solver_thread();
 	for (int i = 0; i < Outputs.size(); i++) {
@@ -1132,18 +1129,13 @@ void basic_app::checkHessians()
 	}
 }
 
-void basic_app::update_mesh()
+void deformation_plugin::update_mesh()
 {
 	std::vector<Eigen::MatrixXd> V;
 	std::vector<Eigen::VectorXd> X; X.resize(Outputs.size());
 	
 	for (int i = 0; i < Outputs.size(); i++){
-		if (Outputs[i].worhpsolver->IsDataReady) {
-			Outputs[i].worhpsolver->get_data(X[i]);
-			std::cout << ">> Reiceved data from worhp successfully!" << std::endl;
-		}
-		else
-			Outputs[i].solver->get_data(X[i]);
+		Outputs[i].solver->get_data(X[i]);
 		
 		V.push_back(Eigen::Map<Eigen::MatrixXd>(
 			X[i].data(), 
@@ -1162,7 +1154,7 @@ void basic_app::update_mesh()
 	}
 }
 
-void basic_app::stop_solver_thread() {
+void deformation_plugin::stop_solver_thread() {
 	solver_on = false;
 	for (auto&o : Outputs) {
 		if (o.solver->is_running) {
@@ -1172,7 +1164,7 @@ void basic_app::stop_solver_thread() {
 	}
 }
 
-void basic_app::start_solver_thread() {
+void deformation_plugin::start_solver_thread() {
 	if (!model_loaded) {
 		solver_on = false;
 		return;
@@ -1206,26 +1198,7 @@ void basic_app::start_solver_thread() {
 	}
 }
 
-void basic_app::start_worhp_solver_thread() {
-	stop_solver_thread();
-	worhp_on = true;
-	for (int i = 0; i < Outputs.size(); i++) {
-		Eigen::VectorXd initialPoint = Eigen::Map<Eigen::VectorXd>(
-			OutputModel(i).V.leftCols(2).data(),
-			OutputModel(i).V.leftCols(2).rows() * 2
-			);
-
-		solver_thread = std::thread(
-			&worhpSolver::run,
-			Outputs[i].worhpsolver.get(),
-			initialPoint
-		);
-		solver_thread.detach();
-	}
-	worhp_on = false;
-}
-
-void basic_app::initializeSolver(const int index)
+void deformation_plugin::initializeSolver(const int index)
 {
 	Eigen::MatrixXd V = OutputModel(index).V;
 	Eigen::MatrixX3i F = OutputModel(index).F;
@@ -1277,14 +1250,11 @@ void basic_app::initializeSolver(const int index)
 	Eigen::VectorXd init = Eigen::Map<const Eigen::VectorXd>(V.data(), V.size());
 	Outputs[index].newton->init(Outputs[index].totalObjective, init, OutputModel(index).F, OutputModel(index).V);
 	Outputs[index].gradient_descent->init(Outputs[index].totalObjective, init, OutputModel(index).F, OutputModel(index).V);
-
-	//update worhp solver
-	Outputs[index].worhpsolver->init(V, F);
 	
 	std::cout << ">> Solver is initialized!" << std::endl;
 }
 
-void basic_app::UpdateEnergyColors(const int index) {
+void deformation_plugin::UpdateEnergyColors(const int index) {
 	int numF = OutputModel(index).F.rows();
 	Eigen::VectorXd DistortionPerFace(numF);
 	DistortionPerFace.setZero();

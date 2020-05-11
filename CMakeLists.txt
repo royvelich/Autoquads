@@ -10,6 +10,7 @@ option(LIBIGL_WITH_OPENGL            "Use OpenGL"                    ON)
 option(LIBIGL_WITH_OPENGL_GLFW       "Use GLFW"                      ON)
 option(LIBIGL_WITH_OPENGL_GLFW_IMGUI "Use ImGui"                     ON)
 option(LIBIGL_WITH_MATLAB 			 "Use MATLAB"                    ON)
+option(BUILD_TESTS 			 "Build tests"                    OFF)
 find_package(LIBIGL REQUIRED QUIET)
 
 # libraries and plugins
@@ -17,6 +18,7 @@ add_subdirectory("libs/optimization_lib")
 add_subdirectory("plugins")
 
 # applications
-add_subdirectory("apps/basic_app")
-add_subdirectory("apps/optimization_lib_tests")
-add_subdirectory("apps/plugins_tests")
+add_subdirectory("apps")
+if(BUILD_TESTS)
+	add_subdirectory("tests")
+endif()
