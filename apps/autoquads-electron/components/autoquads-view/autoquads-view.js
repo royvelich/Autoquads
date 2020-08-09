@@ -165,7 +165,15 @@ export class AutoquadsView extends connect(store)(LitElement) {
             autocutsWeight: {
                 type: Number,
                 attribute: 'autocuts-weight'
-            },            
+            },
+            symmetricDirichletWeight: {
+                type: Number,
+                attribute: 'symmetric-dirichlet-weight'
+            },  
+            separationWeight: {
+                type: Number,
+                attribute: 'separation-weight'
+            },  
             delta: {
                 type: Number,
                 attribute: 'delta'
@@ -437,8 +445,8 @@ export class AutoquadsView extends connect(store)(LitElement) {
         if(HelpersExports.isModuleLoaded(this.moduleState)) {
             const oldValue = this._autocutsWeight;
             this._autocutsWeight = value;
-            this._engine.setObjectiveFunctionProperty('Separation', 'weight', '', this.autocutsWeight * this.lambda);
-            this._engine.setObjectiveFunctionProperty('Symmetric Dirichlet', 'weight', '', this.autocutsWeight * (1 - this.lambda));
+            this._engine.setObjectiveFunctionProperty('Separation', 'weight', '', this.autocutsWeight);
+            this._engine.setObjectiveFunctionProperty('Symmetric Dirichlet', 'weight', '', this.autocutsWeight);
             this.requestUpdate('autocutsWeight', oldValue);
         }
     }
@@ -446,6 +454,32 @@ export class AutoquadsView extends connect(store)(LitElement) {
     get autocutsWeight() {
         return this._autocutsWeight;
     }   
+
+    set symmetricDirichletWeight(value) {
+        if(HelpersExports.isModuleLoaded(this.moduleState)) {
+            const oldValue = this._symmetricDirichletWeight;
+            this._symmetricDirichletWeight = value;
+            this._engine.setObjectiveFunctionProperty('Symmetric Dirichlet', 'weight', '', this.symmetricDirichletWeight);
+            this.requestUpdate('symmetricDirichletWeight', oldValue);
+        }
+    }
+
+    get symmetricDirichletWeight() {
+        return this._symmetricDirichletWeight;
+    }   
+
+    set separationWeight(value) {
+        if(HelpersExports.isModuleLoaded(this.moduleState)) {
+            const oldValue = this._separationWeight;
+            this._separationWeight = value;
+            this._engine.setObjectiveFunctionProperty('Separation', 'weight', '', this.separationWeight);
+            this.requestUpdate('separationWeight', oldValue);
+        }
+    }
+
+    get separationWeight() {
+        return this._separationWeight;
+    }  
 
     set delta(value) {
         if(HelpersExports.isModuleLoaded(this.moduleState)) {

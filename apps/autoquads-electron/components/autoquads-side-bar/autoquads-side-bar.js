@@ -106,7 +106,7 @@ export class AutoquadsSideBar extends SideBar {
             </side-bar-collapsable-section>
             <side-bar-collapsable-section
                 caption="Numeric Properties">
-                <side-bar-parameter-input
+                <!-- <side-bar-parameter-input
                     id="autocuts-weight"
                     increase-key="f"
                     decrease-key="g"
@@ -116,7 +116,29 @@ export class AutoquadsSideBar extends SideBar {
                     step="2"
                     label="Autocuts Weight"
                     @value-changed="${this._autocutsWeightInputChanged}">
+                </side-bar-parameter-input> -->
+                <side-bar-parameter-input
+                    id="symmetric-dirichlet-weight"
+                    increase-key="f"
+                    decrease-key="d"
+                    value="${this._symmetricDirichletWeight}"
+                    min="0"
+                    max="1000000"
+                    step="2"
+                    label="Symmetric Dirichlet Weight"
+                    @value-changed="${this._symmetricDirichletWeightInputChanged}">
                 </side-bar-parameter-input>
+                <!-- <side-bar-parameter-input
+                    id="separation-weight"
+                    increase-key="h"
+                    decrease-key="g"
+                    value="${this._separationWeight}"
+                    min="0"
+                    max="1000000"
+                    step="2"
+                    label="Separation Weight"
+                    @value-changed="${this._separationWeightInputChanged}">
+                </side-bar-parameter-input> -->
                 <!-- <side-bar-parameter-input
                     id="lambda"
                     increase-key="d"
@@ -127,11 +149,11 @@ export class AutoquadsSideBar extends SideBar {
                     step="0.01"
                     label="Lambda"
                     @value-changed="${this._lambdaInputChanged}">
-                </side-bar-parameter-input>
-                <side-bar-parameter-input
+                </side-bar-parameter-input> -->
+                <!-- <side-bar-parameter-input
                     id="delta"
-                    increase-key="w"
-                    decrease-key="s"
+                    increase-key="s"
+                    decrease-key="a"
                     value="${this._delta}"
                     min="0"
                     max="1"
@@ -139,8 +161,8 @@ export class AutoquadsSideBar extends SideBar {
                     label="Delta"
                     @value-changed="${this._deltaInputChanged}"
                     is-exponential>
-                </side-bar-parameter-input>
-                <side-bar-parameter-input
+                </side-bar-parameter-input> -->
+                <!-- <side-bar-parameter-input
                     id="zeta"
                     increase-key=","
                     decrease-key="m"
@@ -490,7 +512,15 @@ export class AutoquadsSideBar extends SideBar {
             autocutsWeight: {
                 type: Number,
                 attribute: 'autocuts-weight'
-            },            
+            },  
+            symmetricDirichletWeight: {
+                type: Number,
+                attribute: 'symmetric-dirichlet-weight'
+            }, 
+            separationWeight: {
+                type: Number,
+                attribute: 'separation-weight'
+            }, 
             delta: {
                 type: Number,
                 attribute: 'delta'
@@ -767,7 +797,27 @@ export class AutoquadsSideBar extends SideBar {
 
     get autocutsWeight() {
         return this._autocutsWeight;
-    }    
+    }
+
+    set symmetricDirichletWeight(value) {
+        const oldValue = this._symmetricDirichletWeight;
+        this._symmetricDirichletWeight = value;
+        this.requestUpdate('symmetricDirichletWeight', oldValue);
+    }
+
+    get symmetricDirichletWeight() {
+        return this._symmetricDirichletWeight;
+    }   
+
+    set separationWeight(value) {
+        const oldValue = this._separationWeight;
+        this._separationWeight = value;
+        this.requestUpdate('separationWeight', oldValue);
+    }
+
+    get separationWeight() {
+        return this._separationWeight;
+    }   
 
     set delta(value) {
         const oldValue = this._delta;
@@ -1290,6 +1340,14 @@ export class AutoquadsSideBar extends SideBar {
     _autocutsWeightInputChanged(e) {
         store.dispatch(ActionsExports.setAutocutsWeight(e.srcElement.value)); 
     }
+
+    _symmetricDirichletWeightInputChanged(e) {
+        store.dispatch(ActionsExports.setSymmetricDirichletWeight(e.srcElement.value)); 
+    }   
+
+    _separationWeightInputChanged(e) {
+        store.dispatch(ActionsExports.setSeparationWeight(e.srcElement.value)); 
+    }   
 
     _deltaInputChanged(e) {
         store.dispatch(ActionsExports.setDelta(e.srcElement.value)); 

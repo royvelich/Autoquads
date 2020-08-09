@@ -11,7 +11,9 @@ import {
     CHANGE_SOUP_FAT_WIREFRAME_VISIBILITY,
     CHANGE_MODEL_VIEW_VISIBILITY,
     CHANGE_SOUP_VIEW_VISIBILITY,
-    CHANGE_AUTOCUTS_WEIGHT,    
+    CHANGE_AUTOCUTS_WEIGHT,
+    CHANGE_SYMMETRIC_DIRICHLET_WEIGHT,
+    CHANGE_SEPARATION_WEIGHT,
     CHANGE_DELTA,
     CHANGE_LAMBDA,
     CHANGE_ZETA,
@@ -64,6 +66,8 @@ const INITIAL_STATE = {
     modelViewVisibility: EnumsExports.Visibility.VISIBLE,
     soupViewVisibility: EnumsExports.Visibility.VISIBLE,
     autocutsWeight: 1,
+    symmetricDirichletWeight: 1,
+    separationWeight: 1,
     delta: 0.5,
     lambda: 0,
     zeta: 0.95,
@@ -274,7 +278,17 @@ export const reducer = (state = INITIAL_STATE, action) => {
             return {
                 ...state,
                 autocutsWeight: action.weight
-            };            
+            };       
+        case CHANGE_SYMMETRIC_DIRICHLET_WEIGHT:
+            return {
+                ...state,
+                symmetricDirichletWeight: action.weight
+            }; 
+        case CHANGE_SEPARATION_WEIGHT:
+            return {
+                ...state,
+                separationWeight: action.weight
+            }; 
         case CHANGE_DELTA:
             return {
                 ...state,

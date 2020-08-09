@@ -14,6 +14,8 @@ export const CHANGE_SOUP_FAT_WIREFRAME_VISIBILITY = 'CHANGE_SOUP_FAT_WIREFRAME_V
 export const CHANGE_MODEL_VIEW_VISIBILITY = 'CHANGE_MODEL_VIEW_VISIBILITY';
 export const CHANGE_SOUP_VIEW_VISIBILITY = 'CHANGE_SOUP_VIEW_VISIBILITY';
 export const CHANGE_AUTOCUTS_WEIGHT = 'CHANGE_AUTOCUTS_WEIGHT';
+export const CHANGE_SYMMETRIC_DIRICHLET_WEIGHT = 'CHANGE_SYMMETRIC_DIRICHLET_WEIGHT';
+export const CHANGE_SEPARATION_WEIGHT = 'CHANGE_SEPARATION_WEIGHT';
 export const CHANGE_DELTA = 'CHANGE_DELTA';
 export const CHANGE_LAMBDA = 'CHANGE_LAMBDA';
 export const CHANGE_ZETA = 'CHANGE_ZETA';
@@ -179,6 +181,20 @@ export const hideSoupView = () => {
 export const setAutocutsWeight = weight => {
     return {
         type: CHANGE_AUTOCUTS_WEIGHT,
+        weight: weight
+    };
+};
+
+export const setSymmetricDirichletWeight = weight => {
+    return {
+        type: CHANGE_SYMMETRIC_DIRICHLET_WEIGHT,
+        weight: weight
+    };
+};
+
+export const setSeparationWeight = weight => {
+    return {
+        type: CHANGE_SEPARATION_WEIGHT,
         weight: weight
     };
 };

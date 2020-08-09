@@ -176,9 +176,17 @@ private:
 		angular_defect_ = GetFaceFanDataProvider()->GetAngle() - 2 * M_PI;
 		singular_weight_ = abs(angular_defect_);
 		auto objective_functions_count = this->GetObjectiveFunctionsCount();
-		for(std::size_t i = 0; i < objective_functions_count; i++)
+		for (std::size_t i = 0; i < objective_functions_count; i++)
 		{
 			this->GetObjectiveFunction(i)->SetWeight(singular_weight_);
+			//if (singular_weight_ > 0.2)
+			//{
+			//	this->GetObjectiveFunction(i)->SetWeight(singular_weight_);
+			//}
+			//else
+			//{
+			//	this->GetObjectiveFunction(i)->SetWeight(0);
+			//}
 		}
 
 		SummationObjective<PeriodicObjective<StorageOrder_>, Eigen::SparseVector<double>>::PreUpdate(x);
