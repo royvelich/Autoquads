@@ -26,8 +26,13 @@
        1. Open command prompt, and navigate to the repository's root folder:
           1. Run `cmake-js configure`
           2. Navigate to `%REPOSITORY_ROOT%/apps/autoquads-electron` and run `npm install`
+ 3. Build Visual Studio solution:
+    - Open Visual Studio 2019.
+    - Select from menu `File -> Open -> Project/Solution...` and navigate to `%REPOSITORY_ROOT%/build/RDS.sln`
+    - Select your build flavor (`Debug` or `Release`).
+    - Select from menu `Build -> Rebuild`
 
 ## Run Instructions:
  1. Open Visual Studio Code.
- 2. Select from menu `File -> Open Workspace...` and navigate to `%REPOSITORY_ROOT%/apps/autoquads-electron/autoquads.code-workspace`.
- 3. Select from menu `Run -> Start Debugging`.
+ 2. Select from menu `File -> Open Workspace...` and navigate to `%REPOSITORY_ROOT%/apps/autoquads-electron/autoquads.code-workspace`
+ 3. Select from menu `Run -> Start Debugging`
