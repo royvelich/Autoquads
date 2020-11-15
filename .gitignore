@@ -5,5 +5,17 @@ build
 node_modules
 web_modules
 
+# Boost
+boost
+
+# Eigen
+eigen
+
+# GTest
+gtest
+
+# libigl
+libigl
+
 # Node addons
 *.node

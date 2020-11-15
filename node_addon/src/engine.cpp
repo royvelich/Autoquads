@@ -607,7 +607,7 @@ Napi::Value Engine::GetObjectiveFunctionProperty(const Napi::CallbackInfo& info)
 	 */
 	const std::string property_name = info[1].ToString();
 	const std::string property_modifier_name = info[2].ToString();
-	if(properties_map_.contains(property_name))
+	if(properties_map_.find(property_name) != properties_map_.end())
 	{
 		const uint32_t property_id = properties_map_.at(property_name);
 		const uint32_t property_modifier_id = property_modifiers_map_.at(property_modifier_name);
@@ -671,7 +671,7 @@ Napi::Value Engine::SetObjectiveFunctionProperty(const Napi::CallbackInfo& info)
 	 * Set property
 	 */
 	const std::string property_name = info[1].ToString();
-	if (properties_map_.contains(property_name))
+	if (properties_map_.find(property_name) != properties_map_.end())
 	{
 		const uint32_t property_id = properties_map_.at(property_name);
 		if(!objective_function->SetProperty(property_id, JSToNative(env, info[2]), JSToNative(env, info[3])))

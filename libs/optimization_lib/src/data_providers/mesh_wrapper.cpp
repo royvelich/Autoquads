@@ -604,7 +604,7 @@ void MeshWrapper::ComputeAdjacencyMaps(
 			/**
 			 * Vertex to face adjacency
 			 */
-			if (!vi_2_fi.contains(current_vertex_index))
+			if (vi_2_fi.find(current_vertex_index) == vi_2_fi.end())
 			{
 				vi_2_fi[current_vertex_index] = {};
 			}
@@ -615,7 +615,7 @@ void MeshWrapper::ComputeAdjacencyMaps(
 			 * Edge to face adjacency
 			 */
 			int64_t edge_index = ed_2_ei.at(std::make_pair(current_vertex_index, next_vertex_index));
-			if (!ei_2_fi.contains(edge_index))
+			if (ei_2_fi.find(edge_index) == ei_2_fi.end())
 			{
 				ei_2_fi[edge_index] = {};
 			}
@@ -625,7 +625,7 @@ void MeshWrapper::ComputeAdjacencyMaps(
 			/**
 			 * Face to vertex adjacency
 			 */
-			if (!fi_2_vi.contains(face_index))
+			if (fi_2_vi.find(face_index) == fi_2_vi.end())
 			{
 				fi_2_vi[face_index] = {};
 			}
@@ -635,7 +635,7 @@ void MeshWrapper::ComputeAdjacencyMaps(
 			/**
 			 * Face to edge adjacency
 			 */
-			if (!fi_2_ei.contains(face_index))
+			if (fi_2_ei.find(face_index) == fi_2_ei.end())
 			{
 				fi_2_ei[face_index] = {};
 			}
@@ -657,7 +657,7 @@ void MeshWrapper::ComputeAdjacencyMaps(
 			 * Face to face adjacency
 			 */
 			int64_t edge_index = ed_2_ei.at(std::make_pair(current_vertex_index, next_vertex_index));
-			if (ei_2_fi.contains(edge_index))
+			if (ei_2_fi.find(edge_index) != ei_2_fi.end())
 			{
 				for(RDS::FaceIndex adjacent_face_index : ei_2_fi[edge_index])
 				{

@@ -1,5 +1,5 @@
 # RDS
-## Environment setup instructions:
+## Environment Setup Instructions:
 - For all applications:
   - Install [Git](https://git-scm.com/).
   - Install [CMake](https://cmake.org/).
@@ -11,17 +11,23 @@
 - Additional prerequisites for electron applications:
   - Install [NodeJS](https://nodejs.org).
   - Install [Visual Studio Code](https://code.visualstudio.com/).
-  - Open command prompt, and navigate to the project's root folder. Run the following commands:
+  - Open command prompt, and navigate to the repository's root folder. Run the following commands:
       1. `npm install -g cmake-js`
       2. `npm install -g polymer-cli`
       3. `npm install -g @pika/cli`
       3. `npm install`
 
-## Build instructions:
+## Build Instructions:
  1. Clone repository recursively - `git clone --recursive https://github.com/HaifaGraphics/RDS.git`
- 2. Generate Visual Studio project:
+ 2. Generate Visual Studio solution:
     - For native applications:
-       1. Generate Visual Studio project using CMake GUI.
+       1. Generate a Visual Studio solution using CMake GUI.
     - For electron applications:
-      1. Open command prompt, and navigate to the project's root folder.:
-         1. `cmake-js configure`
+       1. Open command prompt, and navigate to the repository's root folder:
+          1. Run `cmake-js configure`
+          2. Navigate to `%REPOSITORY_ROOT%/apps/autoquads-electron` and run `npm install`
+
+## Run Instructions:
+ 1. Open Visual Studio Code.
+ 2. Select from menu `File -> Open Workspace...` and navigate to `%REPOSITORY_ROOT%/apps/autoquads-electron/autoquads.code-workspace`.
+ 3. Select from menu `Run -> Start Debugging`.

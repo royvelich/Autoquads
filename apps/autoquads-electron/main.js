@@ -3,10 +3,14 @@ const {app, protocol, BrowserWindow} = require('electron');
 const path = require('path');
 
 // https://software.intel.com/en-us/node/506046
-let ICPP_COMPILER19 = process.env.ICPP_COMPILER19;
-process.env.PATH = process.env.PATH + ';' + path.join(ICPP_COMPILER19, 'redist\\intel64\\tbb\\vc_mt');
-process.env.PATH = process.env.PATH + ';' + path.join(ICPP_COMPILER19, 'redist\\intel64\\mkl');
-process.env.PATH = process.env.PATH + ';' + path.join(ICPP_COMPILER19, 'redist\\intel64\\compiler');
+for (key in process.env) {
+    if (key.startsWith('ICPP_COMPILER')) {
+        let ICPP_COMPILER = process.env[key];
+        process.env.PATH = process.env.PATH + ';' + path.join(ICPP_COMPILER, 'redist\\intel64\\tbb\\vc_mt');
+        process.env.PATH = process.env.PATH + ';' + path.join(ICPP_COMPILER, 'redist\\intel64\\mkl');
+        process.env.PATH = process.env.PATH + ';' + path.join(ICPP_COMPILER, 'redist\\intel64\\compiler');
+    }
+}
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.

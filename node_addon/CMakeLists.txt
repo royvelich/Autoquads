@@ -46,7 +46,7 @@ endif()
 
 # Properties
 set_target_properties(${PROJECT_NAME} PROPERTIES
-	CXX_STANDARD 20
+	CXX_STANDARD 17
 	PREFIX ""
 	SUFFIX ".node"
 	VS_GLOBAL_UseIntelMKL "Parallel"
