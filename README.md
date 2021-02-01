@@ -1,4 +1,4 @@
-# RDS
+# Autoquads
 ## Environment Setup Instructions:
 - For all applications:
   - Install [Git](https://git-scm.com/).
